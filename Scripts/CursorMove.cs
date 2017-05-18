@@ -25,7 +25,7 @@ public class CursorMove : MonoBehaviour
     void Start ()
     {
         //フラグ保存
-        lookTmp = PlayersMove.isLookFront;
+        lookTmp = MainCharacterController.isLookFront;
     }
 
     /* @brief   物理演算系更新*/
@@ -41,7 +41,7 @@ public class CursorMove : MonoBehaviour
         //targetに、"Sample"の名前のオブジェクトのコンポーネントを見つけてアクセスする
         Transform Player = GameObject.FindGameObjectWithTag("Player").transform;
 
-        if(PlayersMove.isLookFront != lookTmp)
+        if(MainCharacterController.isLookFront != lookTmp)
         {
             //Debug.Log("初期化");
             cursorPos.x *= -1; // カーソルのX軸反転
@@ -51,10 +51,10 @@ public class CursorMove : MonoBehaviour
             //Debug.Log(transform.localEulerAngles);
 
             angleSpeed *= -1;
-            lookTmp = PlayersMove.isLookFront; // フラグ再保存
+            lookTmp = MainCharacterController.isLookFront; // フラグ再保存
         }
 
-        if (PlayersMove.isLookFront == true)
+        if (MainCharacterController.isLookFront == true)
         {
             if (targetAngle.z >= 100f || targetAngle.z <= 30f)
             {

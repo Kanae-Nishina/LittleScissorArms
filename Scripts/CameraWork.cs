@@ -70,7 +70,8 @@ public class CameraWork : MonoBehaviour
     private float currentTimeInWaypoint;         //補完する時間
     private float allDistance;                                  //総距離
     private Transform playerTransform;            //プレイヤーのトランスフォーム
-
+    private Vector3 newPosition;
+    private Quaternion newRotation;
 
     /* @brief 更新前初期化*/
     void Start()
@@ -78,10 +79,11 @@ public class CameraWork : MonoBehaviour
         playerPath = GameObject.Find("PlayerTrajectory").GetComponent<PlayerPath>();
 
         //移動速度設定
-        if (samePlayerPerSecond) perSecond = playerPath.perSecond;
+        if (samePlayerPerSecond)
+            perSecond = playerPath.perSecond;
         SetAllPerSecond();
-        OutputPathInfomation();
-        InputPathInfomation();
+        //OutputPathInfomation();
+        //InputPathInfomation();
         if (points.Count > playerPath.points.Count) Debug.LogError("CameraPath Point count more than PlayerPath Point Count");
 
         //カメラの設定
@@ -95,6 +97,14 @@ public class CameraWork : MonoBehaviour
 
         //再生
         MovePath();
+    }
+
+    /* @brief 更新*/
+    private void LateUpdate()
+    {
+        //移動と回転の更新
+        selectedCamera.transform.position = newPosition;
+        selectedCamera.transform.rotation = newRotation;
     }
 
     /* @brief パス情報の出力 */
@@ -169,16 +179,13 @@ public class CameraWork : MonoBehaviour
                 }
 
                 currentTimeInWaypoint += (Time.deltaTime / timePerSegment) * input;
-                Vector3 newPos = GetBezierPosition(currentWaypointIndex, currentTimeInWaypoint);
-                selectedCamera.transform.position = newPos;
+                newPosition = GetBezierPosition(currentWaypointIndex, currentTimeInWaypoint);
 
                 //カメラの回転更新
-                Quaternion rot;
                 if (isLookAtTarget)
-                    rot = Quaternion.LookRotation(((lookAtTarget.transform.position + lookAtOffset) - selectedCamera.transform.position).normalized);
+                    newRotation = Quaternion.LookRotation(((lookAtTarget.transform.position + lookAtOffset) - selectedCamera.transform.position).normalized);
                 else
-                    rot = Quaternion.LookRotation(Vector3.forward);
-                selectedCamera.transform.rotation = rot;
+                    newRotation = Quaternion.LookRotation(Vector3.forward);
                 yield return 0;
             }
 
@@ -233,6 +240,7 @@ public class CameraWork : MonoBehaviour
         int nextIndex = GetNextIndex(pointIndex);
         Vector3 currentNext = points[pointIndex].position + points[pointIndex].handleNext;
         Vector3 nextPrev = points[nextIndex].position + points[nextIndex].handlePrev;
+#if true
         Vector3 newPos =
             Vector3.Lerp(
                 Vector3.Lerp(
@@ -241,7 +249,17 @@ public class CameraWork : MonoBehaviour
                 Vector3.Lerp(
                     Vector3.Lerp(currentNext, nextPrev, time),
                     Vector3.Lerp(nextPrev, points[nextIndex].position, time), time), time);
-
+#else
+        Vector3 newPos = Vector3.zero;
+        newPos.x =
+            Mathf.Pow((1 - time), 3) * points[pointIndex].position.x
+            + 3 * (1 - time) * (1 - time) * time * currentNext.x
+            + 3 * (1 - time) * time * time * nextPrev.x;
+        newPos.z =
+               Mathf.Pow((1 - time), 3) * points[pointIndex].position.z
+            + 3 * (1 - time) * (1 - time) * time * currentNext.z
+            + 3 * (1 - time) * time * time * nextPrev.z;
+#endif
         return newPos;
     }
 
@@ -252,7 +270,7 @@ public class CameraWork : MonoBehaviour
             return 0;
         return ++index;
     }
-#endif 
+#endif
 
 #if UNITY_EDITOR
     /* @brief シーンビュー上にパス描画*/

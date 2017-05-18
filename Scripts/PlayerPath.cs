@@ -47,7 +47,7 @@ public class HandlePoint
         nextSpentTime = 0f;
         nextDistance = 0f;
     }
-    public HandlePoint(Vector3 pos,Quaternion rot,Vector3 prev,Vector3 next,float time,float dist)
+    public HandlePoint(Vector3 pos, Quaternion rot, Vector3 prev, Vector3 next, float time, float dist)
     {
         position = pos;
         rotation = rot;
@@ -79,8 +79,8 @@ public class PlayerPath : MonoBehaviour
     {
         //ハンドル間の距離とかかる時間設定
         SetTimeAndDistance();
-        OutputPathinfomation();
-        InputPathInfomation();
+        //OutputPathinfomation();
+        //InputPathInfomation();
     }
 
     /* @brief 更新前初期化 */
@@ -89,6 +89,7 @@ public class PlayerPath : MonoBehaviour
         //プレイヤーや秒速が設定されているかどうかのチェック
         if (player == null) Debug.LogError("Player Transform is Null!!");
         if (perSecond <= 0) Debug.LogError("PerScond is not set!!");
+
 
         //移動開始
         MovePath();
@@ -117,10 +118,9 @@ public class PlayerPath : MonoBehaviour
     }
 
     /* @brief パス情報の読み込み */
-    public string pathName;
     void InputPathInfomation()
     {
-        pathName = Application.dataPath + "/ExternalData/" + SceneManager.GetActiveScene().name + "_Player.txt";
+        string pathName = Application.dataPath + "/ExternalData/" + SceneManager.GetActiveScene().name + "_Player.txt";
         StreamReader sr = new StreamReader(pathName);
         string line = "";
         points.Clear();
@@ -128,13 +128,13 @@ public class PlayerPath : MonoBehaviour
         {
             string[] count = line.Split("#"[0]);
             int num = int.Parse(count[1]);
-           Vector3 pos = StringToVector3(sr.ReadLine());
+            Vector3 pos = StringToVector3(sr.ReadLine());
             Quaternion rot = StringToQuaternion(sr.ReadLine());
             Vector3 prev = StringToVector3(sr.ReadLine());
             Vector3 next = StringToVector3(sr.ReadLine());
             float time = float.Parse(sr.ReadLine());
             float dist = float.Parse(sr.ReadLine());
-            HandlePoint point=new HandlePoint(pos,rot,prev,next,time,dist);
+            HandlePoint point = new HandlePoint(pos, rot, prev, next, time, dist);
             points.Add(point);
         }
     }
@@ -189,11 +189,12 @@ public class PlayerPath : MonoBehaviour
             {
                 float input = 0f;
                 if (inputX > 0f && currentWayPointIndex < points.Count - 1)
-                    input = 1f* inputMag;
+                    input = 1f * inputMag;
                 else if (inputX < 0f)
-                    input = -1f* inputMag;
+                    input = -1f * inputMag;
 
                 float timeInWayPoint = currentTimeInWayPoint + (Time.deltaTime / timePerSegment) * input;
+
                 //currentTimeInWayPoint += (Time.deltaTime / timePerSegment) * input;
 
                 //加算値を算出
@@ -202,9 +203,9 @@ public class PlayerPath : MonoBehaviour
                 addPosition.y = 0f;
                 Vector3 dir = addPosition;// * input*-1;
                 Vector3 pivot = player.transform.position;
-                pivot.y += player.transform.localScale.y/2;
+                pivot.y += player.transform.localScale.y / 2;
                 Debug.DrawRay(pivot, dir, Color.red);
-                if (!Physics.Raycast(pivot,dir, player.transform.localScale.x))
+                if (!Physics.Raycast(pivot, dir, player.transform.localScale.x))
                 {
                     addPosition.y = 0f;
                     currentTimeInWayPoint = timeInWayPoint;
@@ -265,6 +266,8 @@ public class PlayerPath : MonoBehaviour
         int nextIndex = GetNextIndex(pointIndex);
         Vector3 currentNext = points[pointIndex].position + points[pointIndex].handleNext;
         Vector3 nextPrev = points[nextIndex].position + points[nextIndex].handlePrev;
+#if true
+
         Vector3 newPos =
             Vector3.Lerp(
                 Vector3.Lerp(
@@ -273,7 +276,17 @@ public class PlayerPath : MonoBehaviour
                 Vector3.Lerp(
                     Vector3.Lerp(currentNext, nextPrev, time),
                     Vector3.Lerp(nextPrev, points[nextIndex].position, time), time), time);
-
+#else
+        Vector3 newPos = Vector3.zero;
+        newPos.x =
+            Mathf.Pow((1 - time), 3) * points[pointIndex].position.x
+            + 3 * (1 - time) * (1 - time) * time * currentNext.x
+            + 3 * (1 - time) * time * time * nextPrev.x;
+        newPos.z =
+               Mathf.Pow((1 - time), 3) * points[pointIndex].position.z
+            + 3 * (1 - time) * (1 - time) * time * currentNext.z
+            + 3 * (1 - time) * time * time * nextPrev.z;
+#endif
         return newPos;
     }
 
@@ -291,13 +304,18 @@ public class PlayerPath : MonoBehaviour
         return addPosition;
     }
 
+    /* @brief かかる時間取得*/
+    public float GetTimePerSegment()
+    {
+        return points[currentWayPointIndex].nextSpentTime;
+    }
+
     /* @brief 入力値セット */
-    public void SetInput(float input,int mag)
+    public void SetInput(float input, int mag)
     {
         inputX = input;
         inputMag = mag;
     }
-    
 
     /* @brief 入力値取得*/
     public float GetInput()
@@ -307,7 +325,7 @@ public class PlayerPath : MonoBehaviour
             input = 1f * inputMag;
         else if (inputX < 0f)
             input = -1f * inputMag;
-        return inputX* inputMag;
+        return input /** inputMag*/;
     }
 
     /* @brief 補間値取得*/

@@ -27,7 +27,6 @@ namespace Assets.WrappingRope.Scripts.Utils
             return false;
         }
 
-
         public static bool TryRaycast(Ray ray, GameObject gameObject, float maxDistance, out HitInfo hitInfo)
         {
             hitInfo = new HitInfo() { Rigidbody = gameObject.GetComponent<Rigidbody>(), GameObject = gameObject };

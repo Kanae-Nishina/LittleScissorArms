@@ -11,7 +11,7 @@ namespace InputGamePad
 {
     public static class GamePad
     {
-        public enum Button { A, B, Start, Jump, Decide, Cancel }                          //ボタン
+        public enum Button { A, B, Start,Dash, Jump, Decide, Cancel }                          //ボタン
         public enum Trigger { LeftTrigger, RightTrigger, L_Scissors, R_Scissors }     //トリガー
 
         //ボタンを押した瞬間
@@ -130,6 +130,7 @@ namespace InputGamePad
                 case Button.B: return KeyCode.Joystick1Button1;
                 case Button.Start: return KeyCode.Joystick1Button7;
 
+                case Button.Dash:return KeyCode.Joystick1Button1;
                 case Button.Jump: return KeyCode.Joystick1Button0;
                 case Button.Decide: return KeyCode.Joystick1Button0;
                 case Button.Cancel: return KeyCode.Joystick1Button1;
@@ -144,6 +145,7 @@ namespace InputGamePad
         public bool A = false;
         public bool B = false;
         public bool Start = false;
+        public bool Dash = false;
         public bool Jump = false;
         public bool Decide = false;
         public bool Cancel = false;
