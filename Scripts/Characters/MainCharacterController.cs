@@ -17,14 +17,16 @@ public class MainCharacterController : MonoBehaviour
     public float throwPower = 0f;                     //投げる力
     public int rollUpPower = 0;                         //巻き上げる力
     public float lookAngle = 0f;                        //キャラクターの向く角度
+    public int moveSpeed = 0;                         //移動量
     public LayerMask groundLayer;                   //地面のレイヤー
     public Transform subCharaPos;                     //他プレイヤーの位置
     public Collider subCharaCol;                         //他プレイヤーの当たり判定
     public Rigidbody subCharaRig;                     //他プレイヤーの当たり判定
     public Animator animator;
     public PlayerPath playerPath;                     //プレイヤーの移動軌跡
-    public static bool isCarry = false;                //メインプレイヤー運んでいるか
+    public bool isCarry = false;                         //メインプレイヤー運んでいるか
     public static bool isLookFront = true;        //前を見ているか
+    public static bool isSubScissor;                //サブキャラがはさんでいるか
     public static Collider mainScissor;
     public float hookShotRange;
 
@@ -40,6 +42,9 @@ public class MainCharacterController : MonoBehaviour
     private GameObject cursor;                        //カーソル取得
     private int dir;
     private float dist;
+    private bool HookShotInitFlg = true;
+    private float DistX;
+    private float DistY;
 
     private enum State
     {
@@ -51,6 +56,7 @@ public class MainCharacterController : MonoBehaviour
         eAim,                //狙う
     }
     State state;
+    private object newPos;
 
     /* @brief   初期化*/
     void Start()
@@ -76,7 +82,9 @@ public class MainCharacterController : MonoBehaviour
     private void LateUpdate()
     {
         if (playerPath)
+        {
             transform.position += playerPath.GetAddPotision();
+        }
     }
 
     /* @brief   移動*/
@@ -98,17 +106,32 @@ public class MainCharacterController : MonoBehaviour
     }
 
     /* @brief   メインキャラクターの移動*/
+    /// <summary>
+    /// 
+    /// </summary>
     void NormalMove()
     {
         //ジャンプ
-        if (isAbleJump && GamePad.GetButtonUp(GamePad.Button.Jump))
+        if (isAbleJump && GamePad.GetButtonDown(GamePad.Button.Jump))
         {
             animator.SetBool("isNormalJump", true);
             Jump();
         }
 
-        //第一引数、-1～1　第二引数、倍率(早くなる)
-        playerPath.SetInput(Stick.x, 1);
+        //横移動
+        playerPath.SetInput(Stick.x, moveSpeed);
+
+        //ダッシュ
+        if (GamePad.GetButton(GamePad.Button.Dash) && Stick.x != 0f)
+        {
+            animator.SetBool("isDash", true);
+            moveSpeed = 2;
+        }
+        if (GamePad.GetButtonUp(GamePad.Button.Dash) && Stick.x != 0f)
+        {
+            animator.SetBool("isDash", false);
+            moveSpeed = 1;
+        }
 
         //カーソルの出現フラグ
         cursor.SetActive(isCarry);
@@ -135,16 +158,14 @@ public class MainCharacterController : MonoBehaviour
             nearGimmick.transform.position = gameObject.transform.FindChild("Alli").transform.position;
         }
 
-
+        // フックショット
         if (SubCharacterController.subScissor != null)
         {
-            if (SubCharacterController.subScissor.transform.tag == "Hook" && Ltrg > 0.8 && Stick.y > 0.8f)
+            if (SubCharacterController.subScissor.transform.tag == "Hook" && Ltrg > 0.8f && Stick.y > 0.8f)
             {
                 HookShot();                
             }
         }
-        Debug.Log(SubCharacterController.subScissor.transform.tag);
-
     }
 
 #if false
@@ -202,33 +223,48 @@ public class MainCharacterController : MonoBehaviour
     void HookShot()
     {
         Debug.Log("フックショット発動中");
-
-        // 重力オフ
-        rigidBody.velocity = Vector3.zero;
-
-        //二点の距離を算出
-        float dist = Vector3.Distance(subCharaPos.transform.position, transform.position);
-
-        if ((subCharaPos.transform.position.x - transform.position.x) <= hookShotRange &&
-            (subCharaPos.transform.position.x - transform.position.x) >= hookShotRange * -1)
+        if (HookShotInitFlg == true)
         {
-            dir = 0;
-        }
-        else if ((subCharaPos.transform.position.x - transform.position.x) > hookShotRange) 
-        {
-            dir = 1;
-        }
-        else if ((subCharaPos.transform.position.x - transform.position.x) < hookShotRange * -1)
-        {
-            dir = -1;
-        }
+            DistX = subCharaPos.transform.position.x - transform.position.x;
+            DistY = subCharaPos.transform.position.y - transform.position.y;
+            Debug.Log(DistX);
+            Debug.Log(DistY);
 
-        playerPath.SetInput(dir, rollUpPower);
-        //Debug.Log(subCharaPos.transform.position.x - transform.position.x);
-        //Debug.Log(dir);
+            HookShotInitFlg = false;
+        }
+        else
+        {
+            // 重力オフ
+            rigidBody.velocity = Vector3.zero;
+            //二点の距離を算出
+            float dist = Vector3.Distance(subCharaPos.transform.position, transform.position);
 
-        // 目標へ移動
-        //transform.position = Vector3.MoveTowards(transform.position, subCharaPos.transform.position, Time.deltaTime * rollUpPower);
+            if ((subCharaPos.transform.position.x - transform.position.x) <= hookShotRange &&
+                (subCharaPos.transform.position.x - transform.position.x) >= hookShotRange * -1)
+            {
+                dir = 0;
+            }
+            else if ((subCharaPos.transform.position.x - transform.position.x) > hookShotRange)
+            {
+                dir = 1;
+            }
+            else if ((subCharaPos.transform.position.x - transform.position.x) < hookShotRange * -1)
+            {
+                dir = -1;
+            }
+
+            // 目標へ移動
+            //x軸移動
+            playerPath.SetInput(dir, rollUpPower);
+
+            //y軸移動
+            Vector3 newPos = transform.position;
+            newPos.y = Mathf.MoveTowards(transform.position.y, subCharaPos.position.y, DistY / ((((playerPath.GetTimePerSegment()) * rollUpPower) * DistY) / DistX));
+            transform.position = newPos;
+
+            isSubScissor = true;
+
+        }
     }
 
     /* @brief 回転補整*/
@@ -281,6 +317,7 @@ public class MainCharacterController : MonoBehaviour
             isCarry = false;
             nearGimmickPos = transform.position * -2f;
             nearGimmick = null;
+            HookShotInitFlg = true;
 
             // サブキャラを投げる
             ThrowAim(transform.position, cursor.transform.position);

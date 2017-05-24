@@ -138,6 +138,7 @@ public class SubCharacterController : MonoBehaviour
         //ギミックを離す
         else if (Ltrg < 0.2 && nearGimmick != null)
         {
+            MainCharacterController.isSubScissor = false;
             isSubPlayerCarry = false;
             nearGimmickPos = transform.position * -2f;
             nearGimmick = null;
