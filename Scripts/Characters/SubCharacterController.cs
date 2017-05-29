@@ -128,10 +128,6 @@ public class SubCharacterController : MonoBehaviour
             nearGimmick = subScissor.gameObject;
             nearGimmickPos = nearGimmick.transform.position;
 
-            if (!isSubPlayerCarry)
-            {
-                //gameObject.AddComponent<FixedJoint>();
-            }
             isSubPlayerCarry = true;
         }
 
@@ -142,8 +138,8 @@ public class SubCharacterController : MonoBehaviour
             isSubPlayerCarry = false;
             nearGimmickPos = transform.position * -2f;
             nearGimmick = null;
-            //Destroy(gameObject.AddComponent<FixedJoint>())
-        }
+			//Destroy(gameObject.AddComponent<FixedJoint>())
+		}
     }
 
     /* @brief   Clip部分が衝突していない*/

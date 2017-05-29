@@ -29,6 +29,7 @@ public class MainCharacterController : MonoBehaviour
     public static bool isSubScissor;                //サブキャラがはさんでいるか
     public static Collider mainScissor;
     public float hookShotRange;
+    public float freeNum; // デバッグ用数値
 
     /*private宣言*/
     private GameObject nearGimmick = null;      //ギミック
@@ -45,12 +46,26 @@ public class MainCharacterController : MonoBehaviour
     private bool HookShotInitFlg = true;
     private float DistX;
     private float DistY;
+    private bool initTarzanFlg;
+	private float tarzanDistX;
+	private float tarzanDistZ;
+
+	private float nowTime;
+	private float afterTime;
+	private float countX;
+    private float countY;
+	private bool isSwingFront;
+    private bool high;
+    private float timeY = 0.04f;
+    private float tarzanDistY = 0.0f;
+    private Vector3 tarzanHigh;
 
     private enum State
     {
         eNormal = 0,    //通常
 
         // イベントステート
+        eAction,
         eScissors,          //鋏む
         eHung,              //ぶら下がり
         eAim,                //狙う
@@ -69,17 +84,22 @@ public class MainCharacterController : MonoBehaviour
         state = State.eNormal;
         animator = GetComponent<Animator>();
         subCharaPos = GameObject.FindGameObjectWithTag("SubPlayer").transform;
-    }
 
-    /* @brief   物理演算系更新*/
-    private void FixedUpdate()
+		nowTime = Mathf.Sin(Time.time);
+		afterTime = nowTime;
+	}
+
+	/* @brief   物理演算系更新*/
+	private void FixedUpdate()
     {
-        //Action();
+		InputController();
+		Motion();
         Move();
+
     }
 
     /* @brief 更新*/
-    private void LateUpdate()
+    private void Update()
     {
         if (playerPath)
         {
@@ -90,65 +110,89 @@ public class MainCharacterController : MonoBehaviour
     /* @brief   移動*/
     void Move()
     {
-        Stick = GamePad.GetLeftStickAxis(false);
-        Ltrg = GamePad.GetTrigger(GamePad.Trigger.LeftTrigger, false);
-        Rtrg = GamePad.GetTrigger(GamePad.Trigger.RightTrigger, false);
-
-        //注視向き補整
-        NormalRotation();
-
-        switch (state)
+		switch (state)
         {
             case State.eNormal:
-                NormalMove();
+
+				NormalMove();
+                break;
+            case State.eAction:
+                Action();
                 break;
         }
+        //注視向き補整
+        NormalRotation();
     }
 
-    /* @brief   メインキャラクターの移動*/
-    /// <summary>
-    /// 
-    /// </summary>
-    void NormalMove()
+    /* @brief   メインキャラクターのアクション*/
+    void Action()
     {
-        //ジャンプ
-        if (isAbleJump && GamePad.GetButtonDown(GamePad.Button.Jump))
+		// 重力オフ
+		rigidBody.velocity = Vector3.zero;
+
+        if (initTarzanFlg)
         {
-            animator.SetBool("isNormalJump", true);
-            Jump();
+			// フックの真下へ移動
+			playerPath.SetInput((subCharaPos.position.x - transform.position.x), moveSpeed * 2);
+
+			if (isLookFront)
+			{
+				isSwingFront = true;
+			}
+			else
+			{
+				isSwingFront = false;
+			}
+        }
+        else
+        {
+			Tarzan();
+		}
+
+		// フックの真下に来たらフラグを折る
+		if (subCharaPos.position.x + 0.5 > transform.position.x &&
+			subCharaPos.position.x - 0.5 < transform.position.x && 
+			initTarzanFlg
+			)
+		{
+            countX = 0; // カウントリセット
+            countY = 0;
+            initTarzanFlg = false;
+            high = true;
+
+            tarzanDistY = Vector3.Distance(subCharaPos.transform.position, transform.position);
+            tarzanHigh = transform.position;
         }
 
+        // フックを離した
+        if (!isSubScissor)
+        {
+            state = State.eNormal;
+			Jump();
+		}
+	}
+
+
+    /* @brief   メインキャラクターの移動*/
+    void NormalMove()
+    {
         //横移動
         playerPath.SetInput(Stick.x, moveSpeed);
 
-        //ダッシュ
-        if (GamePad.GetButton(GamePad.Button.Dash) && Stick.x != 0f)
+		//ジャンプ
+		if (isAbleJump && GamePad.GetButtonDown(GamePad.Button.Jump))
         {
-            animator.SetBool("isDash", true);
-            moveSpeed = 2;
-        }
-        if (GamePad.GetButtonUp(GamePad.Button.Dash) && Stick.x != 0f)
-        {
-            animator.SetBool("isDash", false);
-            moveSpeed = 1;
+            Jump();
         }
 
         //カーソルの出現フラグ
         cursor.SetActive(isCarry);
 
-        //キャラの注視方向
-        if (Stick.x > 0.01 && !isLookFront)
-        {
-            isLookFront = true;
-        }
-        if (Stick.x < -0.01 && isLookFront)
-        {
-            isLookFront = false;
-        }
-
         //キャラクターの中央から足元にかけて、接地判定用のラインを引く
-        Vector3 newPos = transform.position - (transform.up * 0.5f);
+        Vector3 newPos = transform.position - (transform.up * 3.5f);
+
         isAbleJump = Physics.Linecast(transform.position, newPos, groundLayer); //Linecastが判定するレイヤー 
+
         Debug.DrawLine(transform.position, newPos, Color.cyan);
 
         // サブキャラを持ち上げる
@@ -158,64 +202,67 @@ public class MainCharacterController : MonoBehaviour
             nearGimmick.transform.position = gameObject.transform.FindChild("Alli").transform.position;
         }
 
-        // フックショット
+        // ターザン
         if (SubCharacterController.subScissor != null)
         {
             if (SubCharacterController.subScissor.transform.tag == "Hook" && Ltrg > 0.8f && Stick.y > 0.8f)
             {
-                HookShot();                
+                isSubScissor = true;
+                initTarzanFlg = true;
+                //HookShot();
             }
+        }
+
+        if(isSubScissor)
+        {
+            state = State.eAction;
         }
     }
 
-#if false
-    /* @brief 移動の補正処理*/
-    void CorrectionMove()
+    /* @brief   コントローラーの入力*/
+    void InputController()
     {
-        Vector3 correctionPos = transform.position;
-        if (posList[targetNum - 1].x == posList[targetNum].x)
-        {
-            correctionPos.x = posList[targetNum].x;
-        }
-        else if (posList[targetNum - 1].z == posList[targetNum].z)
-        {
-            correctionPos.z = posList[targetNum].z;
-        }
-        transform.position = correctionPos;
+        Stick = GamePad.GetLeftStickAxis(false);
+        Ltrg = GamePad.GetTrigger(GamePad.Trigger.LeftTrigger, false);
+        Rtrg = GamePad.GetTrigger(GamePad.Trigger.RightTrigger, false);
     }
 
-    /* @brief ターゲット座標と方向ベクトルチェック*/
-    void CheckTarget(float inputX)
-    {
-        Vector3 target = posList[targetNum];
-        target.y = transform.position.y;
-        float rightDist = Vector3.Distance(transform.position, target);
-        target = posList[targetNum - 1];
-        target.y = transform.position.y;
-        float leftDist = Vector3.Distance(transform.position, target);
-        if (inputX >= 0 && rightDist <= moveSpeed)
-        {
-            if (targetNum < posList.Count && nowDirNum < dirList.Count)
-            {
-                ++nowDirNum;
-                ++targetNum;
-            }
-        }
-        else if (inputX < 0 && leftDist <= moveSpeed)
-        {
-            if (targetNum > 0 && nowDirNum > 0)
-            {
-                --nowDirNum;
-                --targetNum;
-            }
-        }
-    }
-#endif
+	/* @brief   アニメーション管理*/
+	void Motion()
+	{
+		#region 歩く
+		if (Stick.x != 0f)
+		{
+			animator.SetBool("isWalk", true);
+		}
+		else if (Stick.x == 0f)
+		{
+			animator.SetBool("isWalk", false);
+		}
+		#endregion
 
-    /* @brief   ジャンプ*/
-    void Jump()
+		#region ダッシュ
+		if (GamePad.GetButton(GamePad.Button.Dash) && Stick.x != 0f && isAbleJump)
+		{
+			animator.SetBool("isDash", true);
+			moveSpeed = 2;
+		}
+		else
+		{
+			animator.SetBool("isDash", false);
+			moveSpeed = 1;
+		}
+		#endregion
+
+	}
+
+	/* @brief   ジャンプ*/
+	void Jump()
     {
-        rigidBody.AddForce(Vector3.up * jumpPower);
+
+		animator.SetBool("isNormalJump", true);
+
+		rigidBody.AddForce(Vector3.up * jumpPower);
         isAbleJump = false;
     }
 
@@ -227,8 +274,8 @@ public class MainCharacterController : MonoBehaviour
         {
             DistX = subCharaPos.transform.position.x - transform.position.x;
             DistY = subCharaPos.transform.position.y - transform.position.y;
-            Debug.Log(DistX);
-            Debug.Log(DistY);
+            //Debug.Log(DistX);
+            //Debug.Log(DistY);
 
             HookShotInitFlg = false;
         }
@@ -237,7 +284,7 @@ public class MainCharacterController : MonoBehaviour
             // 重力オフ
             rigidBody.velocity = Vector3.zero;
             //二点の距離を算出
-            float dist = Vector3.Distance(subCharaPos.transform.position, transform.position);
+            dist = Vector3.Distance(subCharaPos.transform.position, transform.position);
 
             if ((subCharaPos.transform.position.x - transform.position.x) <= hookShotRange &&
                 (subCharaPos.transform.position.x - transform.position.x) >= hookShotRange * -1)
@@ -261,17 +308,91 @@ public class MainCharacterController : MonoBehaviour
             Vector3 newPos = transform.position;
             newPos.y = Mathf.MoveTowards(transform.position.y, subCharaPos.position.y, DistY / ((((playerPath.GetTimePerSegment()) * rollUpPower) * DistY) / DistX));
             transform.position = newPos;
-
-            isSubScissor = true;
-
         }
     }
 
-    /* @brief 回転補整*/
-    void NormalRotation()
+    /* @brief   ターザン*/
+    void Tarzan()
     {
-        Vector3 rot = transform.FindChild("body").gameObject.transform.eulerAngles;
+		// ターザン
+		int dir;
+		if (isSwingFront)
+		{
+            countX += 0.04f;
+		}
+		else
+		{
+            countX -= 0.04f;
+		}
+
+        nowTime = Mathf.Sin(countX);
+
+		// メインキャラとサブキャラの二点の距離間を保存
+		tarzanDistX = subCharaPos.position.x - transform.position.x;
+		tarzanDistZ = subCharaPos.position.z - transform.position.z;
+
+		// 1フレーム前の数値の比較
+		if (nowTime >= afterTime)
+		{
+			isLookFront = true;
+			dir = 1;
+        }
+        else
+		{
+			isLookFront = false;
+			dir = -1;
+        }
+
+        // 縦移動
+
+        //  ２点間の角度を求める
+        Vector2 abst = subCharaPos.position - tarzanHigh;
+        float toAngle = -Mathf.Atan2(abst.y, abst.x);
+
+        transform.position = subCharaPos.position + new Vector3(dist * Mathf.Cos(toAngle), dist * Mathf.Sin(toAngle));
+
+        #region 振り子運動
+        //if (Mathf.Sin(countX) < 0)
+        //{
+        //    tarzanHigh.y = transform.position.y + (tarzanDistY) * Mathf.Sin(countX) / 5.5f;
+
+        //}
+        //else
+        //{
+        //    tarzanHigh.y = transform.position.y - (tarzanDistY) * Mathf.Sin(countX) / 5.5f;
+        //}
+
+        //tarzanHigh.y = transform.position.y + (tarzanDistX * Mathf.Sin(countX)) / 30 * -1;
+        //tarzanHigh.y = (subCharaPos.position.y - (tarzanDistX) * Mathf.Sin(countX)) - subCharaPos.position.y / 2;
+        #endregion
+
+        // 横移動
+        playerPath.SetInput(dir, 2);
+
+        //Debug.Log(Vector2.Distance(subCharaPos.transform.position, transform.position));
+
+        // 更新
+		afterTime = nowTime;
+	}
+
+	/* @brief 回転補整*/
+	void NormalRotation()
+    {
+        Vector3 rot = transform.FindChild("body").gameObject.transform.localEulerAngles;
+
+        transform.LookAt(transform.position + playerPath.GetAddPotision());
+
         // 正面から角度を加減して進行方向へ向く
+
+        //キャラの注視方向
+        if (Stick.x > 0.01 && !isLookFront)
+        {
+            isLookFront = true;
+        }
+        if (Stick.x < -0.01 && isLookFront)
+        {
+            isLookFront = false;
+        }
         if (isLookFront)
         {
             rot.y = lookAngle;
@@ -281,14 +402,15 @@ public class MainCharacterController : MonoBehaviour
             rot.y = lookAngle * -1;
         }
 
-        transform.FindChild("body").gameObject.transform.rotation = Quaternion.Euler(rot);
+        transform.FindChild("body").gameObject.transform.localRotation = Quaternion.Euler(rot);
     }
 
-    /* @brief   メインプレイヤーからカーソルへの角度算出して投げる*/
-    void ThrowAim(Vector3 player, Vector3 cursor)
+	/* @brief   メインプレイヤーからカーソルへの角度算出して投げる*/
+	void ThrowAim(Vector3 player, Vector3 cursor)
     {
-        throwAngle.x = cursor.x - player.x;
-        throwAngle.y = cursor.y - player.y;
+        //throwAngle.x = cursor.x - player.x;
+        //throwAngle.y = cursor.y - player.y;
+        throwAngle = cursor - player;
         subCharaRig.AddForce(throwAngle * throwPower);
     }
 
@@ -310,7 +432,6 @@ public class MainCharacterController : MonoBehaviour
             isCarry = true;
             subCharaRig.velocity = Vector3.zero;
         }
-
         //ギミックを離す
         else if (Rtrg < 0.2 && nearGimmick != null)
         {
@@ -323,32 +444,9 @@ public class MainCharacterController : MonoBehaviour
             ThrowAim(transform.position, cursor.transform.position);
             animator.SetBool("isScissorsBack", false);
             animator.SetBool("isLeave", true);
+
+            isSubScissor = false;
         }
-
-        //歩くモーション
-        if (Stick.x != 0f)
-        {
-            animator.SetBool("isWalk", true);
-        }
-        else if (Stick.x == 0f)
-        {
-            animator.SetBool("isWalk", false);
-        }
-
-        //フックショット
-        //if (SubCharacterController.subScissor.transform.tag != null)
-        //{
-        //    if (SubCharacterController.subScissor.transform.tag == "Hook" && Ltrg > 0.8 && Stick.y > 0.8f)
-        //    {
-        //        HookShot();
-
-        //        //方向ベクトル算出
-        //        Vector3 vec = (subCharaPos.transform.position - transform.position).normalized;
-        //        playerPath.SetInput(vec.x, 5);
-
-        //        //Debug.Log(Vector3.Distance(transform.position, subCharaPos.transform.position));
-        //    }
-        //}
     }
 
     /* @brief   Clip部分が衝突していない*/

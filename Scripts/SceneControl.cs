@@ -13,7 +13,13 @@ using InputGamePad;
 public class SceneControl : MonoBehaviour
 {
     public float fadeTime = 1f;                   //フェードにかける時間
-    public string nextScene;
+    public string[] sceneName;
+    public AudioClip[] bgm;
+    int sceneNumber = 0;
+
+    AudioSource audio;
+
+    Dictionary<string, AudioClip> sceneSoundDic;
     List<GameObject> dontDestroy;      //Sシーンをまたいでも消さないオブジェクト
 
     [SerializeField]
@@ -42,27 +48,49 @@ public class SceneControl : MonoBehaviour
         dontDestroy = new List<GameObject>();
         foreach (Transform child in transform)
         {
-            DontDestroyOnLoad(child);
+            //DontDestroyOnLoad(child);
             dontDestroy.Add(child.gameObject);
         }
+        sceneSoundDic = new Dictionary<string, AudioClip>();
+        if (sceneName.Length == bgm.Length)
+        {
+            for (int i = 0; i < sceneName.Length; i++)
+            {
+                sceneSoundDic.Add(sceneName[i], bgm[i]);
+            }
+        }
+    }
+
+    private void Start()
+    {
+        audio = GetComponent<AudioSource>();
+        audio.clip = sceneSoundDic[sceneName[sceneNumber]];
+        audio.Play();
     }
 
     /* @brief 更新*/
     private void Update()
     {
-        if(GamePad.GetButtonDown(GamePad.Button.Start))
+        if (GamePad.GetButtonDown(GamePad.Button.Start) || Input.GetKeyDown(KeyCode.A))
         {
-            ChangeScene(nextScene);
+            ++sceneNumber;
+            if (sceneNumber == sceneName.Length)
+            {
+                sceneNumber = 0;
+            }
+            ChangeScene();
         }
     }
 
     /* @brief シーン遷移*/
-    public void ChangeScene(string sceneName)
+    public void ChangeScene()
     {
         fade.FadeIn(fadeTime, () =>
         {
-            SceneManager.LoadScene(sceneName);
-
+            SceneManager.LoadScene(sceneName[sceneNumber]);
+            audio.Stop();
+            audio.clip = sceneSoundDic[sceneName[sceneNumber]];
+            audio.Play();
             fade.FadeOut(fadeTime, () => { });
         });
     }
