@@ -36,7 +36,7 @@ public class PlayerPath : MonoBehaviour
     public float globalFollowPathBias = 0.001f;                     //パスに沿う移動の偏り(0の方が高い)
     public float velocityBias = .1f;                                                //移動速度の偏り補正
     public float currentPos;                                                          //現在の補間位置(0~1)
-    public float currentNextPos = 0f;                                                //次の補間位置
+    public float currentNextPos = 0f;                                        //次の補間位置
     public float totalDistance = 0;                                             //総距離
     private float _lastVelocity = 1.0f;                                         //最後のアニメーション速度のキャッシュ
     public WaypointChangedEvent waypointChanged;    //最後のポイント通過時のイベント

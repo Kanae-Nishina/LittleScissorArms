@@ -19,12 +19,14 @@ public class Waypoint
         Fast
     }
 
-    public float offsetY;
-    public float distance;
+    public bool inspectorView=false;                   //インスペクターに描画するかどうか
+    public float offsetY = 0f;                                   //Y軸移動のオフセット
+    public float dist = 17.5f;                                     //距離
+    public Vector3 lookOffset;                              //注視のオフセット
+    public Transform lookAt;                                //そのポイントにおける注視点
 
     public Vector3 position;                                  //ポイント座標
     public Vector3 rotation;                                  //オイラー角での回転
-    public Transform lookAt;                                //そのポイントにおける注視点
 
     public Vector3 inTangent;                               //入力ベジェの接線
     public Vector3 outTangent;                           //出力ベジェの接線
