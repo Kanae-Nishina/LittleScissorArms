@@ -11,8 +11,11 @@ namespace InputGamePad
 {
     public static class GamePad
     {
-        public enum Button { A, B, Start,Dash, Jump, Decide, Cancel }                          //ボタン
+        public enum Button { A, B, Start, Dash, Jump, Decide, Cancel }                          //ボタン
         public enum Trigger { LeftTrigger, RightTrigger, L_Scissors, R_Scissors }     //トリガー
+        public enum Stick { AxisX, AxisY }    //スティック
+        private static Vector2 preLeftStick = Vector2.zero;
+        private const float stickMiddle = 0.5f;
 
         //ボタンを押した瞬間
         public static bool GetButtonDown(Button button)
@@ -67,6 +70,35 @@ namespace InputGamePad
             }
             return axis;
         }
+
+        //左スティックを入力した瞬間
+        public static float GetLeftStickAxis(bool raw, Stick axis)
+        {
+            Vector2 now = GetLeftStickAxis(raw);
+            float diff = 0f;
+            if (axis == Stick.AxisX)
+            {
+                diff = Mathf.Abs(preLeftStick.x - now.x);
+            }
+            else if (axis == Stick.AxisY)
+            {
+                diff = Mathf.Abs(preLeftStick.x - now.x);
+            }
+
+            if (diff < stickMiddle)
+                return 0f;
+            else
+                preLeftStick = now;
+
+            if (axis == Stick.AxisX)
+                return (now.x >= 0) ? 1f : -1f;
+            else if (axis == Stick.AxisY)
+                return (now.y >= 0) ? 1f : -1f;
+
+            return 0f;
+        }
+
+        //左スティックのY軸を入力した瞬間
 
         //トリガー入力状態
         public static float GetTrigger(Trigger trigger, bool raw)
@@ -130,7 +162,7 @@ namespace InputGamePad
                 case Button.B: return KeyCode.Joystick1Button1;
                 case Button.Start: return KeyCode.Joystick1Button7;
 
-                case Button.Dash:return KeyCode.Joystick1Button1;
+                case Button.Dash: return KeyCode.Joystick1Button1;
                 case Button.Jump: return KeyCode.Joystick1Button0;
                 case Button.Decide: return KeyCode.Joystick1Button0;
                 case Button.Cancel: return KeyCode.Joystick1Button1;

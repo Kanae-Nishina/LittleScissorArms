@@ -16,22 +16,16 @@ using System;
 [CanEditMultipleObjects]
 public class CameraWorkInspector : Editor
 {  
-    private float offsetY = 0f;
-    private float dist = 17.5f;
-    private Transform lookat = null;
-    private Vector3 lookatOffset = Vector3.zero;
-    
-
-    //アクティブ時のイベント
-    void OnEnable()
-    {
-    }
+    //一括設定の為の一時保存用
+    private float offsetY = 0f;                                             //Y軸オフセット
+    private float dist = 17.5f;                                               //注視点との距離
+    private Transform lookat = null;                                //注視対象
+    private Vector3 lookatOffset = Vector3.zero;       //注視点とのオフセット
 
     //インスペクターの表示
     public override void OnInspectorGUI()
     {
         serializedObject.Update();
-        EditorGUIUtility.labelWidth = 120;
         var t = target as CameraWork;
 
         #region 基本設定
@@ -50,25 +44,25 @@ public class CameraWorkInspector : Editor
 
         #region 個々の設定
         EditorGUILayout.BeginVertical("Box");
-        GetPlayerPathPoint(t);
+        CameraInfoSetting(t);
         EditorGUILayout.EndVertical();
         EditorGUILayout.Separator();
         #endregion
-        EditorUtility.SetDirty(t); //インスペクター上のGUI変更メソッド
 
+        EditorUtility.SetDirty(t);    //更新
     }
 
     //基本設定
     void Base(CameraWork t)
     {
         if (!serializedObject.isEditingMultipleObjects)
+        {
             t.target = (Transform)EditorGUILayout.ObjectField("カメラ", t.target, typeof(Transform), true);
+        }
         t.player = (MainCharacterController)EditorGUILayout.ObjectField("プレイヤー", t.player, typeof(MainCharacterController), true);
         EditorGUIUtility.labelWidth = 90;
-
         EditorGUILayout.LabelField("ズームアウトでの加算値");
         t.zoomOutDist = EditorGUILayout.Slider("", t.zoomOutDist, 1f, 10f);
-
     }
 
     //一括設定
@@ -120,9 +114,10 @@ public class CameraWorkInspector : Editor
 
     }
 
-    //プレイヤーパスのポイント情報取得
-    void GetPlayerPathPoint(CameraWork t)
+    //プレイヤーパスのポイント間のカメラ設定
+    void CameraInfoSetting(CameraWork t)
     {
+        //プレイヤーパスのポイントが無かったら情報をセットしない
         int amount = t.playerPath.waypoints.Length;
         if (amount == 0) return;
 
@@ -142,5 +137,3 @@ public class CameraWorkInspector : Editor
         }
     }
 }
-
-

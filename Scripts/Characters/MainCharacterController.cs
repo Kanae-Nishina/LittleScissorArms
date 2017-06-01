@@ -47,18 +47,33 @@ public class MainCharacterController : MonoBehaviour
     private float DistX;
     private float DistY;
     private bool initTarzanFlg;
-	private float tarzanDistX;
-	private float tarzanDistZ;
+    private float tarzanDistX;
+    private float tarzanDistZ;
 
-	private float nowTime;
-	private float afterTime;
-	private float countX;
+    private float nowTime;
+    private float afterTime;
+    private float countX;
     private float countY;
-	private bool isSwingFront;
+    private bool isSwingFront;
     private bool high;
     private float timeY = 0.04f;
     private float tarzanDistY = 0.0f;
     private Vector3 tarzanHigh;
+
+    //振子運動関係=======
+    public float windUpPower;                                   //巻き上げる力
+    private float radius;                                                   //半径
+    [Range(0f, 5f)] public float minRadius;              //半径最小値
+    private float maxRadius;                                          //半径最大値
+    [Range(0f, 1f)] public float acceleration;            //加速力
+    private float addAccele;                                            //角度加算値
+    [Range(0f, 10f)] public float firstAcceleSpeed;      //初速保存
+    private float accelSpeed;                                               //速度
+    [Range(0f, 1f)] public float gravityAccele;                 //重力加速度
+    private bool isPendulum = false;                                //振り子フラグ
+    private float swingAngle;                                           //振り幅
+    private Vector3 prePosition = Vector3.zero;           //前フレームの加算値
+    //=======
 
     private enum State
     {
@@ -85,50 +100,47 @@ public class MainCharacterController : MonoBehaviour
         animator = GetComponent<Animator>();
         subCharaPos = GameObject.FindGameObjectWithTag("SubPlayer").transform;
 
-		nowTime = Mathf.Sin(Time.time);
-		afterTime = nowTime;
-	}
-
-	/* @brief   物理演算系更新*/
-	private void FixedUpdate()
-    {
-		InputController();
-		Motion();
-        Move();
-
+        nowTime = Mathf.Sin(Time.time);
+        afterTime = nowTime;
     }
 
-    /* @brief 更新*/
-    private void Update()
+    /* @brief   物理演算系更新*/
+    private void FixedUpdate()
     {
-        if (playerPath)
-        {
-            transform.position += playerPath.GetAddPotision();
-        }
+        InputController();
+        Motion();
+        Move();
+
     }
 
     /* @brief   移動*/
     void Move()
     {
-		switch (state)
+        switch (state)
         {
             case State.eNormal:
-
-				NormalMove();
+                NormalMove();
+                //注視向き補整
+                NormalRotation();
                 break;
             case State.eAction:
                 Action();
                 break;
         }
-        //注視向き補整
-        NormalRotation();
+        if (playerPath)
+        {
+            prePosition = transform.position;
+            prePosition.y = 0f;
+            transform.position += playerPath.GetAddPotision();
+        }
     }
 
     /* @brief   メインキャラクターのアクション*/
     void Action()
     {
-		// 重力オフ
-		rigidBody.velocity = Vector3.zero;
+#if false
+        // 重力オフ
+        rigidBody.velocity = Vector3.zero;
 
         if (initTarzanFlg)
         {
@@ -170,8 +182,216 @@ public class MainCharacterController : MonoBehaviour
             state = State.eNormal;
 			Jump();
 		}
-	}
+#else
+        if (!isPendulum)
+        {
+            //振り子初期化
+            PendulumSetting();
+            isPendulum = true;
+        }
+        Pendulum();
 
+        //振り子の終了
+        if (!isSubScissor)
+        {
+            isPendulum = false;
+            rigidBody.useGravity = true;
+            subCharaRig.useGravity = true;
+            subCharaRig.isKinematic = false;
+            state = State.eNormal;
+        }
+
+#endif
+    }
+
+    #region
+    /* @brief 振子運動の設定*/
+    void PendulumSetting()
+    {
+#if true
+        radius = Vector3.Distance(transform.position, subCharaPos.position);
+        maxRadius = radius;
+        Vector3 targetDir = transform.position - subCharaPos.position;
+        Vector3 right = (subCharaPos.position + Vector3.right) - subCharaPos.position;
+        swingAngle = Vector3.Angle(targetDir, right);
+        addAccele = 0;
+        accelSpeed = firstAcceleSpeed;
+        rigidBody.useGravity = false;
+        subCharaRig.useGravity = false;
+        subCharaRig.isKinematic = true;
+#else
+        radius = Vector3.Distance(transform.localPosition, subCharaPos.localPosition);
+        maxRadius = radius;
+        Vector3 targetDir = transform.localPosition - subCharaPos.localPosition;
+        Vector3 right = (subCharaPos.localPosition + Vector3.right) - subCharaPos.localPosition;
+        swingAngle = Vector3.Angle(targetDir, right);
+        addAccele = 0;
+        accelSpeed = firstAcceleSpeed;
+        rigidBody.useGravity = false;
+        subCharaRig.useGravity = false;
+        subCharaRig.isKinematic = true;
+#endif
+    }
+
+    /* @brief 巻き上げ*/
+    void Hoisting()
+    {
+        radius -= windUpPower * Stick.y;
+        if (radius <= minRadius)
+        {
+            radius = minRadius;
+        }
+        else if (radius >= maxRadius)
+        {
+            radius = maxRadius;
+        }
+    }
+
+    /* @brief 振り子の加速*/
+    void PendulumAcceleration()
+    {
+        addAccele -= acceleration * GamePad.GetLeftStickAxis(true, GamePad.Stick.AxisX);
+        const float maxAddAngle = 3f;
+        const float minAddAngle = -3f;
+        if (addAccele >= maxAddAngle)
+        {
+            addAccele = maxAddAngle;
+        }
+        else if (addAccele <= minAddAngle)
+        {
+            addAccele = minAddAngle;
+        }
+    }
+
+    /* @brief 振子運動*/
+    void Pendulum()
+    {
+        //巻き上げ
+        Hoisting();
+        //振り子の加速
+        PendulumAcceleration();
+#if true
+        //支点
+        Vector3 fulcrum = subCharaPos.position;
+        fulcrum.y *= -1f;
+
+        //現在の位置
+        var rad = swingAngle * Mathf.Deg2Rad;
+        var preRad = rad;
+        var px = fulcrum.x + Mathf.Cos(rad) * radius;
+        var py = fulcrum.y + Mathf.Sin(rad) * radius;
+        var pz = fulcrum.z + Mathf.Cos(rad) * radius;
+
+        //重力移動量を反映した位置
+        var vx = px - fulcrum.x;
+        var vy = py - fulcrum.y;
+        var vz = pz - fulcrum.z;
+        var t = -(vy * gravityAccele) / (vx * vx + vy * vy);
+        var gx = px + t * vx;
+        var gy = py + gravityAccele + t * vy;
+        var gz = pz + t * vz;
+
+        //2つの位置の角度差
+        var rx = Mathf.Atan2(gy - fulcrum.y, gx - fulcrum.x) * Mathf.Rad2Deg;
+        var rz = Mathf.Atan2(gy - fulcrum.y, gz - fulcrum.z) * Mathf.Rad2Deg;
+
+        //角度差を角速度に加算
+        const float fullAngle = 360f;
+        const float halfAngle = 180f;
+        var sub = rx - swingAngle;
+        {
+            sub -= Mathf.Floor(sub / fullAngle) * fullAngle;
+            if (sub <= halfAngle)
+                sub += fullAngle;
+            if (sub > halfAngle)
+                sub -= fullAngle;
+            accelSpeed += sub;
+        }
+        var subZ = rz - swingAngle;
+        {
+            subZ -= Mathf.Floor(subZ / fullAngle) * fullAngle;
+            if (subZ <= halfAngle)
+                subZ += fullAngle;
+            if (subZ > halfAngle)
+                subZ -= fullAngle;
+            //accelSpeed += subZ;
+        }
+        //角度に角加算と加速力を加算
+        swingAngle += accelSpeed + addAccele;
+        //新しい位置
+        rad = swingAngle * Mathf.Deg2Rad;
+        px = fulcrum.x + Mathf.Cos(rad) * radius;
+        py = (fulcrum.y + Mathf.Sin(rad) * radius) * -1f;
+        pz =/* fulcrum.z + */Mathf.Cos(rad) * radius;
+
+        Vector3 tempPos = transform.position;
+        tempPos.y = py;
+        transform.position = tempPos;
+        tempPos.y = 0f;
+
+        //水平軸はパスに添わせる
+        //float diff = px - transform.position.x;
+        float diffZ = pz - transform.position.z;
+        float diff = Vector3.Distance(prePosition, tempPos);
+        Debug.Log(diff);
+        //float dir = (preRad <= rad) ? 1 : -1;
+        const float pendulumMag = 1f;
+        playerPath.SetInput(1, diff*pendulumMag);
+#else
+        //支点
+        Vector3 fulcrum = subCharaPos.localPosition;
+        fulcrum.y *= -1f;
+
+        //現在の位置
+        var rad = swingAngle * Mathf.Deg2Rad;
+        var px = fulcrum.x + Mathf.Cos(rad) * radius;
+        var py = fulcrum.y + Mathf.Sin(rad) * radius;
+        var pz = fulcrum.z + Mathf.Cos(rad) * radius;
+
+        //重力移動量を反映した位置
+        var vx = px - fulcrum.x;
+        var vy = py - fulcrum.y;
+        var t = -(vy * gravityAccele) / (vx * vx + vy * vy);
+        var gx = px + t * vx;
+        var gy = py + gravityAccele + t * vy;
+
+        //2つの位置の角度差
+        var r = Mathf.Atan2(gy - fulcrum.y, gx - fulcrum.x) * Mathf.Rad2Deg;
+
+        //角度差を角速度に加算
+        const float fullAngle = 360f;
+        const float halfAngle = 180f;
+        var sub = r - swingAngle;
+        sub -= Mathf.Floor(sub / fullAngle) * fullAngle;
+        if (sub <= halfAngle)
+            sub += fullAngle;
+        if (sub > halfAngle)
+            sub -= fullAngle;
+
+        accelSpeed += sub;
+
+        //角度に角加算と加速力を加算
+        swingAngle += accelSpeed + addAccele;
+
+        //新しい位置
+        rad = swingAngle * Mathf.Deg2Rad;
+        px = fulcrum.x + Mathf.Cos(rad) * radius;
+        py = (fulcrum.y + Mathf.Sin(rad) * radius) * -1f;
+        pz = fulcrum.z + Mathf.Cos(rad) * radius;
+
+        Vector3 tempPos = transform.localPosition;
+        tempPos.y = py;
+        transform.localPosition = tempPos;
+
+        //水平軸はパスに添わせる
+        float diffX = px - transform.localPosition.x;
+        float diffZ = pz - transform.localPosition.z;
+        const float pendulumMag = 0.1f;
+        playerPath.SetInput(1, diffZ * pendulumMag);
+#endif
+
+    }
+#endregion
 
     /* @brief   メインキャラクターの移動*/
     void NormalMove()
@@ -179,8 +399,8 @@ public class MainCharacterController : MonoBehaviour
         //横移動
         playerPath.SetInput(Stick.x, moveSpeed);
 
-		//ジャンプ
-		if (isAbleJump && GamePad.GetButtonDown(GamePad.Button.Jump))
+        //ジャンプ
+        if (isAbleJump && GamePad.GetButtonDown(GamePad.Button.Jump))
         {
             Jump();
         }
@@ -213,7 +433,7 @@ public class MainCharacterController : MonoBehaviour
             }
         }
 
-        if(isSubScissor)
+        if (isSubScissor)
         {
             state = State.eAction;
         }
@@ -227,42 +447,42 @@ public class MainCharacterController : MonoBehaviour
         Rtrg = GamePad.GetTrigger(GamePad.Trigger.RightTrigger, false);
     }
 
-	/* @brief   アニメーション管理*/
-	void Motion()
-	{
-		#region 歩く
-		if (Stick.x != 0f)
-		{
-			animator.SetBool("isWalk", true);
-		}
-		else if (Stick.x == 0f)
-		{
-			animator.SetBool("isWalk", false);
-		}
-		#endregion
+    /* @brief   アニメーション管理*/
+    void Motion()
+    {
+#region 歩く
+        if (Stick.x != 0f)
+        {
+            animator.SetBool("isWalk", true);
+        }
+        else if (Stick.x == 0f)
+        {
+            animator.SetBool("isWalk", false);
+        }
+#endregion
 
-		#region ダッシュ
-		if (GamePad.GetButton(GamePad.Button.Dash) && Stick.x != 0f && isAbleJump)
-		{
-			animator.SetBool("isDash", true);
-			moveSpeed = 2;
-		}
-		else
-		{
-			animator.SetBool("isDash", false);
-			moveSpeed = 1;
-		}
-		#endregion
+#region ダッシュ
+        if (GamePad.GetButton(GamePad.Button.Dash) && Stick.x != 0f && isAbleJump)
+        {
+            animator.SetBool("isDash", true);
+            moveSpeed = 2;
+        }
+        else
+        {
+            animator.SetBool("isDash", false);
+            moveSpeed = 1;
+        }
+#endregion
 
-	}
+    }
 
-	/* @brief   ジャンプ*/
-	void Jump()
+    /* @brief   ジャンプ*/
+    void Jump()
     {
 
-		animator.SetBool("isNormalJump", true);
+        animator.SetBool("isNormalJump", true);
 
-		rigidBody.AddForce(Vector3.up * jumpPower);
+        rigidBody.AddForce(Vector3.up * jumpPower);
         isAbleJump = false;
     }
 
@@ -310,37 +530,37 @@ public class MainCharacterController : MonoBehaviour
             transform.position = newPos;
         }
     }
-
+#if true
     /* @brief   ターザン*/
     void Tarzan()
     {
-		// ターザン
-		int dir;
-		if (isSwingFront)
-		{
+        // ターザン
+        int dir;
+        if (isSwingFront)
+        {
             countX += 0.04f;
-		}
-		else
-		{
+        }
+        else
+        {
             countX -= 0.04f;
-		}
+        }
 
         nowTime = Mathf.Sin(countX);
 
-		// メインキャラとサブキャラの二点の距離間を保存
-		tarzanDistX = subCharaPos.position.x - transform.position.x;
-		tarzanDistZ = subCharaPos.position.z - transform.position.z;
+        // メインキャラとサブキャラの二点の距離間を保存
+        tarzanDistX = subCharaPos.position.x - transform.position.x;
+        tarzanDistZ = subCharaPos.position.z - transform.position.z;
 
-		// 1フレーム前の数値の比較
-		if (nowTime >= afterTime)
-		{
-			isLookFront = true;
-			dir = 1;
+        // 1フレーム前の数値の比較
+        if (nowTime >= afterTime)
+        {
+            isLookFront = true;
+            dir = 1;
         }
         else
-		{
-			isLookFront = false;
-			dir = -1;
+        {
+            isLookFront = false;
+            dir = -1;
         }
 
         // 縦移動
@@ -351,7 +571,7 @@ public class MainCharacterController : MonoBehaviour
 
         transform.position = subCharaPos.position + new Vector3(dist * Mathf.Cos(toAngle), dist * Mathf.Sin(toAngle));
 
-        #region 振り子運動
+#region 振り子運動
         //if (Mathf.Sin(countX) < 0)
         //{
         //    tarzanHigh.y = transform.position.y + (tarzanDistY) * Mathf.Sin(countX) / 5.5f;
@@ -364,7 +584,7 @@ public class MainCharacterController : MonoBehaviour
 
         //tarzanHigh.y = transform.position.y + (tarzanDistX * Mathf.Sin(countX)) / 30 * -1;
         //tarzanHigh.y = (subCharaPos.position.y - (tarzanDistX) * Mathf.Sin(countX)) - subCharaPos.position.y / 2;
-        #endregion
+#endregion
 
         // 横移動
         playerPath.SetInput(dir, 2);
@@ -372,11 +592,12 @@ public class MainCharacterController : MonoBehaviour
         //Debug.Log(Vector2.Distance(subCharaPos.transform.position, transform.position));
 
         // 更新
-		afterTime = nowTime;
-	}
+        afterTime = nowTime;
+    }
+#endif
 
-	/* @brief 回転補整*/
-	void NormalRotation()
+    /* @brief 回転補整*/
+    void NormalRotation()
     {
         Vector3 rot = transform.FindChild("body").gameObject.transform.localEulerAngles;
 
@@ -405,8 +626,8 @@ public class MainCharacterController : MonoBehaviour
         transform.FindChild("body").gameObject.transform.localRotation = Quaternion.Euler(rot);
     }
 
-	/* @brief   メインプレイヤーからカーソルへの角度算出して投げる*/
-	void ThrowAim(Vector3 player, Vector3 cursor)
+    /* @brief   メインプレイヤーからカーソルへの角度算出して投げる*/
+    void ThrowAim(Vector3 player, Vector3 cursor)
     {
         //throwAngle.x = cursor.x - player.x;
         //throwAngle.y = cursor.y - player.y;

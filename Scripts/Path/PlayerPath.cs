@@ -32,7 +32,7 @@ public class PlayerPath : MonoBehaviour
     public bool updateTransform = true;                                    //アニメーション中の変換の更新フラグ
     private int _lastPassedWayponint;                                   //イベント管理の為の最終ポイント
 
-    public float speed = 0.1f;
+    public float speed = 0.1f;                                                      //移動スピード
     public float globalFollowPathBias = 0.001f;                     //パスに沿う移動の偏り(0の方が高い)
     public float velocityBias = .1f;                                                //移動速度の偏り補正
     public float currentPos;                                                          //現在の補間位置(0~1)
@@ -49,9 +49,10 @@ public class PlayerPath : MonoBehaviour
     public Vector3[] positionSamples = null;                        //サンプリング座標。
     public Quaternion[] rotationSamples = null;                 //サンプリングの回転
 
-    private float inputX = 0;
-    private float inputMag = 0f;
-    private Vector3 addPosition;
+    private float inputX = 0;               //スティック入力
+    private float moveMag = 0f;        //移動の大きさ
+    private Vector3 addPosition;        //加算される方向ベクトル
+
     //アクティブ時の初期化
     void OnEnable()
     {
@@ -100,10 +101,10 @@ public class PlayerPath : MonoBehaviour
     }
 
     /* @brief 入力値セット */
-    public void SetInput(float input, int mag)
+    public void SetInput(float input, float mag)
     {
         inputX = input;
-        inputMag = mag;
+        moveMag = mag;
     }
 
     /* @brief 入力による移動量取得*/
@@ -111,9 +112,9 @@ public class PlayerPath : MonoBehaviour
     {
         float input = 0f;
         if (inputX > 0f)
-            input = 1f * inputMag;
+            input = 1f * moveMag;
         else if (inputX < 0f)
-            input = -1f * inputMag;
+            input = -1f * moveMag;
         return input;
     }
 
@@ -132,23 +133,10 @@ public class PlayerPath : MonoBehaviour
         //ポイントが無ければ通らない
         if (waypoints.Length == 0)
             return;
-
-        float input = 0f;
-        if (inputX > 0f)
-            input = 1f * inputMag;
-        else if (inputX < 0f)
-            input = -1f * inputMag;
-
+        
         //移動状態
-        float advance = (speed * velocityBias * _lastVelocity * input);
-        // In edit mode update is called at very low FPS, so tweak it!
-        //((Application.isPlaying) ? Time.deltaTime : 0.008f));
-
-        // Advance
+        float advance = (speed * velocityBias * _lastVelocity * GetInput());
         currentNextPos = currentPos + advance;
-
-        //currentPos += advance;
-
         if (currentNextPos >= 1f)
         {
             if (loop)
@@ -158,7 +146,6 @@ public class PlayerPath : MonoBehaviour
             else
             {
                 currentNextPos = 1f;
-                //Pause(); // Thanks to Leon
             }
         }
         else if (currentNextPos < 0f)
@@ -170,7 +157,6 @@ public class PlayerPath : MonoBehaviour
             else
             {
                 currentNextPos = 0f;
-                //Pause(); // Thanks to Leon
             }
         }
         
@@ -250,10 +236,6 @@ public class PlayerPath : MonoBehaviour
     #endregion
 
     //サンプリングによるポイント情報の取得
-    /// <param name="pos">0~1におけるポイント</param>
-    /// <param name="position">座標(Vector3)</param>
-    /// <param name="velocity">速度</param>
-    /// <param name="waypoint">ポイント</param>
     public void sampledPositionAndVelocityAndWaypointAtPos(float pos, out Vector3 position, out float velocity, out int waypoint)
     {
         float refDistance = pos * totalDistance;
@@ -354,7 +336,6 @@ public class PlayerPath : MonoBehaviour
     #region 計算
 
     //特定位置での座標計算
-    /// <param name="pos">アニメーション位置</param>
     public Vector3 computePositionAtPos(float pos)
     {
         if (waypoints.Length < 1)
@@ -393,7 +374,6 @@ public class PlayerPath : MonoBehaviour
     }
 
     //特定位置での速度計算
-    /// <param name="pos">アニメーション位置</param>
     public float computeVelocityAtPos(float pos)
     {
         if (waypoints.Length < 1)
