@@ -57,8 +57,8 @@ public class PlayerPath : MonoBehaviour
     void OnEnable()
     {
 #if UNITY_EDITOR
-        if (!Application.isPlaying)
-            EditorApplication.update += FixedUpdate;
+        //if (!Application.isPlaying)
+           // EditorApplication.update += FixedUpdate;
 #endif
     }
 
@@ -66,8 +66,8 @@ public class PlayerPath : MonoBehaviour
     void OnDisable()
     {
 #if UNITY_EDITOR
-        if (!Application.isPlaying)
-            EditorApplication.update -= FixedUpdate;
+        //if (!Application.isPlaying)
+            //EditorApplication.update -= FixedUpdate;
 #endif
     }
 

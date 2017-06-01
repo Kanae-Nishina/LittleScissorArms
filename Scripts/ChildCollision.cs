@@ -24,7 +24,15 @@ public class ChildCollision : MonoBehaviour
     {
     }
 
+
     /* @brief   衝突検知*/
+    private void OnTriggerEnter(Collider col)
+    {
+        parent.SendMessage("ChildOnTriggerEnter", col);
+    }
+
+
+    /* @brief   衝突検知継続*/
     private void OnTriggerStay(Collider col)
     {
         parent.SendMessage("ChildOnTriggerStay", col);
