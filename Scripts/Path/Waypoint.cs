@@ -1,10 +1,17 @@
-﻿using UnityEngine;
+﻿/*
+ * @file Waypoint.cs
+ * @brief ポイント情報クラス
+ * @date 2017/05/25
+ * @author 仁科香苗
+ * @note 参考:PlayerPath(https://www.assetstore.unity3d.com/jp/#!/content/47769)
+ */
+using UnityEngine;
 using UnityEngine.Events;
 using System.Collections;
 using System;
 
 [Serializable]
-//ポイント情報
+/* @brief ポイント情報*/
 public class Waypoint
 {
     [Serializable]
@@ -18,13 +25,13 @@ public class Waypoint
         Medium,
         Fast
     }
-
-    public bool inspectorView=false;                   //インスペクターに描画するかどうか
+    public bool inspectorView = false;                   //インスペクターに描画するかどうか
     public float offsetY = 0f;                                   //Y軸移動のオフセット
     public float dist = 17.5f;                                     //距離
     public Vector3 lookOffset;                              //注視のオフセット
     public Vector3 cameraVec;                               //カメラのある方向
     public Transform lookAt;                                //そのポイントにおける注視点
+
 
     public Vector3 position;                                  //ポイント座標
     public Vector3 rotation;                                  //オイラー角での回転
@@ -52,86 +59,28 @@ public class Waypoint
         outVariation = VelocityVariation.Medium;
         reached = null;
     }
+}
 
-    #region ゲッターとセッター
-    //ポイントの取得と設定
-    public Vector3 Position
-    {
-        get { return position; }
-        set { position = value; }
-    }
+/* @brief カメラポイント情報*/
+[Serializable]
+public class CameraWaypoint
+{
+    public bool inspectorView;                   //インスペクターに描画するかどうか
+    public float currentPos;
+    public float offsetY;                                   //Y軸移動のオフセット
+    public float dist;                                     //距離
+    public Vector3 lookOffset;                              //注視のオフセット
+    public Vector3 cameraVec;                               //カメラのある方向
+    public Transform lookAt;                                //そのポイントにおける注視点
 
-    //回転の取得と設定
-    public Vector3 Rotation
+    /* @brief 初期化*/
+    public CameraWaypoint()
     {
-        get { return rotation; }
-        set { rotation = value; }
+        inspectorView = false;
+        offsetY = 0f;
+        dist = 17.5f;
+        lookOffset = Vector3.zero;
+        cameraVec = Vector3.zero;
+        lookAt = null;
     }
-
-    //注視点設定
-    public Transform LookAt
-    {
-        get { return lookAt; }
-        set { lookAt = value; }
-    }
-
-    //入力ベジェの接線取得と設定
-    public Vector3 InTangent
-    {
-        get { return inTangent; }
-        set
-        {
-            inTangent = value;
-            if (symmetricTangents)
-                outTangent = -inTangent;
-        }
-    }
-
-    //出力ベジェの接線の取得と設定
-    public Vector3 OutTangent
-    {
-        get { return outTangent; }
-        set
-        {
-            outTangent = value;
-            if (symmetricTangents)
-                inTangent = -outTangent;
-        }
-    }
-
-    //入出力ベジェの接線の対称フラグの取得と設定
-    public bool SymmetricTangents
-    {
-        get { return symmetricTangents; }
-        set { symmetricTangents = value; }
-    }
-
-    //入りの速度タイプの取得と設定
-    public VelocityVariation InVariation
-    {
-        get { return inVariation; }
-        set { inVariation = value; }
-    }
-
-    //出る時の速度タイプの取得と設定
-    public VelocityVariation OutVariation
-    {
-        get { return outVariation; }
-        set { outVariation = value; }
-    }
-
-    //速度の取得と設定
-    public float Velocity
-    {
-        get { return velocity; }
-        set { velocity = value; }
-    }
-
-    //ポイント到達時のイベントの取得と設定
-    public ReachedEvent Reached
-    {
-        get { return reached; }
-        set { reached = value; }
-    }
-    #endregion
 }

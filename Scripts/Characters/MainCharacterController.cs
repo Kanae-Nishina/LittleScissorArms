@@ -76,6 +76,7 @@ public class MainCharacterController : MonoBehaviour
     private float preAngleDeg;                                      //更新前の振子の角度
     private float newAngleDeg;                                             //更新後の振子の角度
     private Vector3 fulcrum;                                            //支点
+    private Vector3 prePos;
     //=======
 
     private enum State
@@ -111,10 +112,11 @@ public class MainCharacterController : MonoBehaviour
     /* @brief   物理演算系更新*/
     private void FixedUpdate()
     {
+        
         InputController();
         Motion();
         Move();
-
+        
     }
 
     /* @brief   移動*/
@@ -136,7 +138,12 @@ public class MainCharacterController : MonoBehaviour
         }
         if (playerPath)
         {
-            transform.position += playerPath.GetAddPotision();
+            Vector3 add = playerPath.GetAddPotision();
+            if (add != Vector3.zero)
+            {
+                prePos = transform.position;
+            }
+            transform.position += add;
         }
     }
 
@@ -222,24 +229,42 @@ public class MainCharacterController : MonoBehaviour
     void PendulumSetting()
     {
 #if true
-        radius = Vector3.Distance(transform.position, subCharaPos.position);
-        maxRadius = radius;
-        Vector3 targetDir = transform.position - subCharaPos.position;
 
-        Vector3 right = (subCharaPos.position + Vector3.right) - subCharaPos.position;
-
-        swingAngle = Vector3.Angle(targetDir, right);
-        Debug.Log(transform.localPosition + Vector3.forward);
-        Debug.Log(targetDir);
-        if ((swingAngle >= 90f && targetDir.x <= targetDir.z)
-            || (swingAngle < 90f && targetDir.x >= targetDir.z))
+        Vector3 vec = transform.position - prePos;
+        Debug.Log(vec);
+        vec.y = 0f;
+        float x = Mathf.Abs(vec.x);
+        float z = Mathf.Abs(vec.z);
+        if(x>=z)
         {
-            pendulumDirX = true;
+            pendulumDirX = true;    
         }
         else
         {
             pendulumDirX = false;
         }
+
+        radius = Vector3.Distance(transform.position, subCharaPos.position);
+        maxRadius = radius;
+        Vector3 targetDir = transform.position - subCharaPos.position;
+        //Vector3 dir = Vector3.right;
+        //if (!pendulumDirX)
+        //{
+        //    dir = Vector3.forward;
+        //}
+        Vector3 dir = Vector3.Normalize(vec);
+        swingAngle = Vector3.Angle(targetDir, dir);
+        Debug.Log(swingAngle);
+        //Debug.Log(targetDir);
+        //if ((swingAngle >= 90f && targetDir.x <= targetDir.z)
+        //    || (swingAngle < 90f && targetDir.x >= targetDir.z))
+        //{
+        //    pendulumDirX = true;
+        //}
+        //else
+        //{
+        //    pendulumDirX = false;
+        //}
 
         addAccele = 0;
         accelSpeed = firstAcceleSpeed;
@@ -357,9 +382,12 @@ public class MainCharacterController : MonoBehaviour
         //水平軸はパスに添わせる
         Vector3 vec = new Vector3(px, 0f, pz) - transform.position;
         float diff = (pendulumDirX) ? vec.x : vec.z;
-        // Debug.Log("vec:" + vec);
         const float pendulumMag = 10f;
-        playerPath.SetInput(1f, diff*pendulumMag);
+        //Debug.Log("diff: "+diff);
+        float dm = Vector3.Magnitude(new Vector3(px, 0f, pz));
+        float tm = Vector3.Magnitude(new Vector3(transform.position.x, 0f, transform.position.z));
+        //Debug.Log(dm-tm);
+        playerPath.SetInput(1f,diff* pendulumMag);
 #endif
     }
 

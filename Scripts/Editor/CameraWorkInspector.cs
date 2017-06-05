@@ -11,7 +11,6 @@ using UnityEditor;
 using UnityEditorInternal;
 using System;
 
-//カメラワークのエディタ拡張
 [CustomEditor(typeof(CameraWork))]
 [CanEditMultipleObjects]
 public class CameraWorkInspector : Editor
@@ -22,7 +21,7 @@ public class CameraWorkInspector : Editor
     private Transform lookat = null;                                //注視対象
     private Vector3 lookatOffset = Vector3.zero;       //注視点とのオフセット
 
-    //インスペクターの表示
+    /* @brief インスペクターの表示*/
     public override void OnInspectorGUI()
     {
         serializedObject.Update();
@@ -49,11 +48,18 @@ public class CameraWorkInspector : Editor
         EditorGUILayout.Separator();
         #endregion
 
+        #region プレビュー
+        EditorGUILayout.BeginVertical("Box");
+       // Preview(t);
+        EditorGUILayout.EndVertical();
+        EditorGUILayout.Separator();
+        #endregion
+
         EditorUtility.SetDirty(t);    //更新
     }
 
 
-    //基本設定
+    /* @brief 基本設定*/
     void Base(CameraWork t)
     {
         if (!serializedObject.isEditingMultipleObjects)
@@ -66,7 +72,7 @@ public class CameraWorkInspector : Editor
         t.zoomOutDist = EditorGUILayout.Slider("", t.zoomOutDist, 1f, 10f);
     }
 
-    //一括設定
+    /* @brief 一括設定*/
     void BulkSetting(CameraWork t)
     {
         EditorGUILayout.BeginHorizontal();
@@ -115,7 +121,7 @@ public class CameraWorkInspector : Editor
 
     }
 
-    //プレイヤーパスのポイント間のカメラ設定
+    /* @brief プレイヤーパスのポイント間のカメラ設定*/
     void CameraInfoSetting(CameraWork t)
     {
         //プレイヤーパスのポイントが無かったら情報をセットしない
@@ -139,5 +145,36 @@ public class CameraWorkInspector : Editor
         }
     }
 
+    /* @brief ポイント設定*/
+    void CameraPointSetting(CameraWork t)
+    {
+
+    }
+
+    /* @brief プレビュー*/
+    void Preview(CameraWork t)
+    {
+        EditorGUILayout.BeginHorizontal();
+
+        EditorGUIUtility.labelWidth = 70;
+        t.playerPath.currentPos=EditorGUILayout.Slider("座標",t.playerPath.currentPos, 0f, 1f);
+        EditorGUIUtility.labelWidth = 120;
+
+        for (int i = 0; i < targets.Length; i++)
+        {
+            if (!t.playerPath.updateTransform && t.playerPath.target != null)
+            {
+                PlayerPath pmo = t.playerPath;
+                Vector3 position = Vector3.zero;
+                Quaternion rotation = Quaternion.identity;
+                float velocity = 0f;
+                int waypoint = 0;
+                pmo.sampledPositionAndVelocityAndWaypointAtPos(pmo.currentPos, out position, out velocity, out waypoint);
+                pmo.UpdateTarget(position, velocity);
+            }
+        }
+
+        EditorGUILayout.EndHorizontal();
+    }
   
 }
