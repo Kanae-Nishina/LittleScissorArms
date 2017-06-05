@@ -23,6 +23,7 @@ public class Waypoint
     public float offsetY = 0f;                                   //Y軸移動のオフセット
     public float dist = 17.5f;                                     //距離
     public Vector3 lookOffset;                              //注視のオフセット
+    public Vector3 cameraVec;                               //カメラのある方向
     public Transform lookAt;                                //そのポイントにおける注視点
 
     public Vector3 position;                                  //ポイント座標

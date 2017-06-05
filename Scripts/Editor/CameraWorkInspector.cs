@@ -52,6 +52,7 @@ public class CameraWorkInspector : Editor
         EditorUtility.SetDirty(t);    //更新
     }
 
+
     //基本設定
     void Base(CameraWork t)
     {
@@ -130,10 +131,13 @@ public class CameraWorkInspector : Editor
             {
                 t.playerPath.waypoints[i].offsetY = EditorGUILayout.Slider("Y軸オフセット", t.playerPath.waypoints[i].offsetY, 0f, 20f);
                 t.playerPath.waypoints[i].dist = EditorGUILayout.Slider("距離", t.playerPath.waypoints[i].dist, 0f, 20f);
+                t.playerPath.waypoints[i].cameraVec= EditorGUILayout.Vector3Field("カメラのある方向", t.playerPath.waypoints[i].cameraVec);
                 t.playerPath.waypoints[i].lookAt = (Transform)EditorGUILayout.ObjectField("注視点", t.playerPath.waypoints[i].lookAt, typeof(Transform), true);
                 t.playerPath.waypoints[i].lookOffset = EditorGUILayout.Vector3Field("注視点オフセット", t.playerPath.waypoints[i].lookOffset);
             }
             EditorGUILayout.EndVertical();
         }
     }
+
+  
 }

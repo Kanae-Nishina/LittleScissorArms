@@ -61,15 +61,15 @@ public class MainCharacterController : MonoBehaviour
     private Vector3 tarzanHigh;
 
     //振子運動関係=======
-    public float windUpPower;                                   //巻き上げる力
+    public float windUpPower=1f;                                   //巻き上げる力
     private float radius;                                                   //半径
-    [Range(0f, 5f)] public float minRadius;              //半径最小値
+    [Range(0f, 5f)] public float minRadius=1f;              //半径最小値
     private float maxRadius;                                          //半径最大値
-    [Range(0f, 1f)] public float acceleration;            //加速力
+    [Range(0f, 1f)] public float acceleration=1f;            //加速力
     private float addAccele;                                            //角度加算値
-    [Range(0f, 10f)] public float firstAcceleSpeed;      //初速保存
+    [Range(0f, 10f)] public float firstAcceleSpeed=0.1f;      //初速保存
     private float accelSpeed;                                               //速度
-    [Range(0f, 1f)] public float gravityAccele;                 //重力加速度
+    [Range(0f, 0.1f)] public float gravityAccele=0.5f;                 //重力加速度
     private bool isPendulum = false;                                //振り子フラグ
     private float swingAngle;                                           //振り幅
     private bool pendulumDirX = false;                                          //振り子の方向
@@ -225,9 +225,22 @@ public class MainCharacterController : MonoBehaviour
         radius = Vector3.Distance(transform.position, subCharaPos.position);
         maxRadius = radius;
         Vector3 targetDir = transform.position - subCharaPos.position;
-        pendulumDirX = (targetDir.x <= targetDir.z) ? true : false;
+
         Vector3 right = (subCharaPos.position + Vector3.right) - subCharaPos.position;
+
         swingAngle = Vector3.Angle(targetDir, right);
+        Debug.Log(transform.localPosition + Vector3.forward);
+        Debug.Log(targetDir);
+        if ((swingAngle >= 90f && targetDir.x <= targetDir.z)
+            || (swingAngle < 90f && targetDir.x >= targetDir.z))
+        {
+            pendulumDirX = true;
+        }
+        else
+        {
+            pendulumDirX = false;
+        }
+
         addAccele = 0;
         accelSpeed = firstAcceleSpeed;
         rigidBody.useGravity = false;
@@ -313,6 +326,7 @@ public class MainCharacterController : MonoBehaviour
         const float fullAngle = 360f;
         const float halfAngle = 180f;
         float sub = (pendulumDirX) ? (rx - swingAngle) : (rz - swingAngle);
+        //float sub =rx - swingAngle;
         sub -= Mathf.Floor(sub / fullAngle) * fullAngle;
         if (sub <= halfAngle)
             sub += fullAngle;
@@ -329,17 +343,23 @@ public class MainCharacterController : MonoBehaviour
         rad = swingAngle * Mathf.Deg2Rad;
         px = fulcrum.x + Mathf.Cos(rad) * radius;
         py = (fulcrum.y + Mathf.Sin(rad) * radius) * -1f;
-        pz = fulcrum.z + Mathf.Cos(rad) * radius;
+         pz = fulcrum.z + Mathf.Cos(rad) * radius;
+        //Debug.Log("Cos:" + (Mathf.Cos(rad)));
+        //Debug.Log("rad:"+(Mathf.Cos(rad) * radius));
+        // Debug.Log("px:" + px);
 
         //高さは振子運動を使用
         Vector3 tempPos = transform.position;
         tempPos.y = py;
         transform.position = tempPos;
+        Vector3 dir = fulcrum - transform.position;
 
         //水平軸はパスに添わせる
         Vector3 vec = new Vector3(px, 0f, pz) - transform.position;
         float diff = (pendulumDirX) ? vec.x : vec.z;
-        playerPath.SetInput(1f, diff);
+        // Debug.Log("vec:" + vec);
+        const float pendulumMag = 10f;
+        playerPath.SetInput(1f, diff*pendulumMag);
 #endif
     }
 
@@ -602,6 +622,12 @@ public class MainCharacterController : MonoBehaviour
         //throwAngle.y = cursor.y - player.y;
         throwAngle = cursor - player;
         subCharaRig.AddForce(throwAngle * throwPower);
+    }
+
+    /* @brief 自身が振り子の支点になる*/
+    void Hook()
+    {
+
     }
 
     /* @brief 衝突した瞬間検知*/

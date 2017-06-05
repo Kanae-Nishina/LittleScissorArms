@@ -53,32 +53,32 @@ public class PlayerPath : MonoBehaviour
     private float moveMag = 0f;        //移動の大きさ
     private Vector3 addPosition;        //加算される方向ベクトル
 
-    //アクティブ時の初期化
+    /* @brief アクティブ時の初期化*/
     void OnEnable()
     {
 #if UNITY_EDITOR
-        //if (!Application.isPlaying)
-           // EditorApplication.update += FixedUpdate;
+        if (!Application.isPlaying)
+            EditorApplication.update += FixedUpdate;
 #endif
     }
 
-    //非アクティブ時の処理
+    /* @brief 非アクティブ時の処理*/
     void OnDisable()
     {
 #if UNITY_EDITOR
-        //if (!Application.isPlaying)
-            //EditorApplication.update -= FixedUpdate;
+        if (!Application.isPlaying)
+            EditorApplication.update -= FixedUpdate;
 #endif
     }
 
-    //更新前初期化
+    /* @brief 更新前初期化*/
     void Start()
     {
         //サンプリング処理
         UpdatePathSamples();
     }
 
-    //固定更新
+    /*  @brief 固定更新*/
     void FixedUpdate()
     {
         if (!Application.isPlaying)
@@ -174,8 +174,7 @@ public class PlayerPath : MonoBehaviour
 
     #region     更新関係
 
-    //パスに沿う対象の更新
-    /// <param name="position">更新する座標</param>
+    /* @brief パスに沿う対象の更新*/
     public void UpdateTarget(Vector3 position, float vel)
     {
         if (target != null)
@@ -205,7 +204,7 @@ public class PlayerPath : MonoBehaviour
         }
     }
 
-    //現在のポイント番号における、パスに沿う対象の更新
+    /* @brief 現在のポイント番号における、パスに沿う対象の更新*/
     public void UpdateTarget()
     {
         Vector3 position = Vector3.zero;
@@ -235,7 +234,7 @@ public class PlayerPath : MonoBehaviour
 
     #endregion
 
-    //サンプリングによるポイント情報の取得
+    /* @brief サンプリングによるポイント情報の取得*/
     public void sampledPositionAndVelocityAndWaypointAtPos(float pos, out Vector3 position, out float velocity, out int waypoint)
     {
         float refDistance = pos * totalDistance;
@@ -273,7 +272,7 @@ public class PlayerPath : MonoBehaviour
         waypoint = waypoints.Length - 1;
     }
 
-    //パスのサンプリングの更新
+    /* @brief パスのサンプリングの更新*/
     public void UpdatePathSamples()
     {
         totalDistance = 0f;
@@ -294,6 +293,7 @@ public class PlayerPath : MonoBehaviour
             positionSamples[i] = computePositionAtPos(curPos);
             velocitySamples[i] = computeVelocityAtPos(curPos);
             waypointSamples[i] = GetWaypointFromPos(curPos);
+
 
             if (i == 0)
                 samplesDistances[i] = 0;
@@ -316,14 +316,13 @@ public class PlayerPath : MonoBehaviour
         totalDistance += samplesDistances[samplesNum - 1];
     }
 
-    //現在のポイント番号取得
+    /* @brief 現在のポイント番号取得*/
     public int GetCurrentWaypoint()
     {
         return GetWaypointFromPos(currentPos);
     }
 
-    //ポイント位置から座標取得
-    /// <param name="pos">Position.</param>
+    /* @brief ポイント位置から座標取得*/
     public int GetWaypointFromPos(float pos)
     {
         float step = 1f / (float)(waypoints.Length - (loop ? 0 : 1));
@@ -333,9 +332,31 @@ public class PlayerPath : MonoBehaviour
         return wp;
     }
 
+    /* @brief 座標から最も近いポイント位置を取得*/
+    public float GetCurrentPosFromPosition(Vector3 pos)
+    {
+        //Y軸は考慮しない
+        Vector3 nowPos = pos;
+        for(int i=1;i<samplesNum;i++)
+        {
+            Vector3 preDist = nowPos-positionSamples[i-1];
+            preDist.y = 0f;
+            float pre_now = Vector3.Magnitude(preDist);
+            Vector3 aftDist = nowPos-positionSamples[i];
+            aftDist.y = 0f;
+            float aft_now = Vector3.Magnitude(aftDist);
+            
+            if(pre_now<=aft_now)
+            {
+                //return samplesPos[i -1];
+            }
+        }
+        return 0;
+    }
+
     #region 計算
 
-    //特定位置での座標計算
+    /* @brief 特定位置での座標計算*/
     public Vector3 computePositionAtPos(float pos)
     {
         if (waypoints.Length < 1)
@@ -373,7 +394,7 @@ public class PlayerPath : MonoBehaviour
         }
     }
 
-    //特定位置での速度計算
+    /* @brief 特定位置での速度計算*/
     public float computeVelocityAtPos(float pos)
     {
         if (waypoints.Length < 1)
@@ -426,8 +447,8 @@ public class PlayerPath : MonoBehaviour
     #endregion
 
     #region  get/set関数
-    
-    //イベント管理の為の最終ポイントの取得
+
+    /* @brief イベント管理の為の最終ポイントの取得*/
     public int LastPassedWayponint
     {
         get { return _lastPassedWayponint; }
@@ -435,12 +456,12 @@ public class PlayerPath : MonoBehaviour
     #endregion
 
 #if UNITY_EDITOR
-    //エディタ上にパスの描画
+    /* @brief エディタ上にパスの描画*/
     void OnDrawGizmos()
     {
         if (!gameObject.Equals(Selection.activeGameObject))
         {
-            Matrix4x4 mat = Handles.matrix;  // Thanks to Leon
+            Matrix4x4 mat = Handles.matrix; 
             Handles.matrix = transform.localToWorldMatrix;
 
             for (int i = 0; i < waypoints.Length; i++)

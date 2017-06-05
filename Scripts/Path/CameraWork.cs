@@ -36,8 +36,8 @@ public class CameraWork : MonoBehaviour
 
 
 #if UNITY_EDITOR
-        // if (!Application.isPlaying)
-        //     EditorApplication.update += FixedUpdate;
+        if (!Application.isPlaying)
+            EditorApplication.update += FixedUpdate;
 #endif
     }
 
@@ -45,8 +45,8 @@ public class CameraWork : MonoBehaviour
     void OnDisable()
     {
 #if UNITY_EDITOR
-        //if (!Application.isPlaying)
-        //   EditorApplication.update -= FixedUpdate;
+        if (!Application.isPlaying)
+            EditorApplication.update -= FixedUpdate;
 #endif
     }
 
@@ -69,6 +69,7 @@ public class CameraWork : MonoBehaviour
         Vector3 newPos = target.position;
         Vector3 lookat = Vector3.zero;
         int currenspos = playerPath.GetCurrentWaypoint();
+
         Waypoint point = playerPath.waypoints[currenspos];
         // if (!player.GetIsPendulum())
         {
@@ -83,8 +84,8 @@ public class CameraWork : MonoBehaviour
             {
                 newPos += CameraZoomOut(playerPath.target.position);
             }
-
-            newPos = point.lookAt.position + player.transform.right * dir * point.dist;
+            //newPos = point.lookAt.position + point.cameraVec * point.dist;
+            newPos = point.lookAt.position + point.lookAt.right*dir * point.dist;
             newPos.y += point.offsetY;
             lookat = point.lookAt.position + point.lookOffset;
         }
@@ -121,5 +122,6 @@ public class CameraWork : MonoBehaviour
     }
 
     #endregion
+    
 
 }

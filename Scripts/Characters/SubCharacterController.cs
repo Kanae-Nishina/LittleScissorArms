@@ -55,7 +55,7 @@ public class SubCharacterController : MonoBehaviour
     private enum State
     {
         eFollow,            //ついていく
-
+        eFastMove,
         // イベントステート
         eScissors,          //鋏む
         eHung,              //ぶら下がり
@@ -91,11 +91,24 @@ public class SubCharacterController : MonoBehaviour
             case State.eFollow:
                 FollowMove();
                 break;
+            case State.eFastMove:
+                FastMove();
+                break;
             case State.eHung:
                 HungingMove();
                 break;
         }
 
+    }
+
+    /* @brief プレイヤーの元へ高速移動*/
+    void FastMove()
+    {
+        transform.position = Vector3.Lerp(transform.position, partnerPos.position, 0.5f);
+        if(Vector3.Distance(transform.position,partnerPos.position)<1f)
+        {
+            state = State.eFollow;
+        }
     }
 
     /* @brief   サブキャラクターの移動*/
@@ -112,7 +125,7 @@ public class SubCharacterController : MonoBehaviour
         if (Distance >= subPlayerDistance + subPlayerStopPos)
         {
             // 目的地を算出
-            Vector3 targetPos = partnerPos.TransformPoint(new Vector3(0.5f, 1.0f, -1.0f));
+            Vector3 targetPos = partnerPos.TransformPoint(new Vector3(0.5f, -1f, -1.0f));
             Vector3 velocity = Vector3.zero;
 
             // 移動
@@ -127,11 +140,15 @@ public class SubCharacterController : MonoBehaviour
         {
             //animator.SetBool("isWalk", false);
         }
-
+        if (GamePad.GetLeftStickAxis(false).y > 0.9f)
+        {
+            state = State.eFastMove;
+        }
+#else 
 #endif
     }
 
-    /* @brief ぶら下がりに置ける移動*/
+    /* @brief ぶら下がりにおける移動*/
     void HungingMove()
     {
         // オブジェクトをはさむ
@@ -142,7 +159,7 @@ public class SubCharacterController : MonoBehaviour
         //}
     }
 
-#region 振子
+    #region 振子
     /* @brief 振子運動の設定 */
     void PendulumSetting()
     {
@@ -259,7 +276,7 @@ public class SubCharacterController : MonoBehaviour
         float diff = (pendulumDirX) ? vec.x : vec.z;
         //playerPath.SetInput(1, diff * pendulumMag);
     }
-#endregion
+    #endregion
 
     /* @brief   ジャンプ*/
     void Jump()
