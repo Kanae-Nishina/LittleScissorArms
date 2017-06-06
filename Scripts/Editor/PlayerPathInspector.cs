@@ -32,6 +32,8 @@ public class PlayerPathInspector : Editor
     private GUIStyle actionButtonStyleRight;//アクションボタンスタイル右側
     private GUIStyle rightMiniButton;//ボタンスタイル
 
+    SerializedProperty waypoints;
+
     /* @brief アクティブ時のイベント*/
     void OnEnable()
     {
@@ -444,7 +446,7 @@ public class PlayerPathInspector : Editor
                     Quaternion rotation = Quaternion.identity;
                     float velocity = 0f;
                     int waypoint = 0;
-                    pmo.sampledPositionAndVelocityAndWaypointAtPos(pmo.currentPos, out position, out velocity, out waypoint);
+                    pmo.GetSampledWayPoint(pmo.currentPos, out position, out velocity, out waypoint);
                     pmo.UpdateTarget(position, velocity);
                 }
             }
@@ -478,9 +480,9 @@ public class PlayerPathInspector : Editor
                 EditorPrefs.SetBool("PlayerPath.ShowTangents", showTangents);
                 ((SceneView)SceneView.sceneViews[0]).Repaint();
             }
+            EditorGUILayout.EndHorizontal();
             EditorGUILayout.EndVertical();
         }
-        EditorGUILayout.EndHorizontal();
         EditorGUILayout.Separator();
     }
 
@@ -584,7 +586,7 @@ public class PlayerPathInspector : Editor
         int wp;
         float lastDistanceFromWaypoint;
 
-        pm.sampledPositionAndVelocityAndWaypointAtPos(p, out position, out vel, out wp);
+        pm.GetSampledWayPoint(p, out position, out vel, out wp);
 
         do
         {
@@ -594,7 +596,7 @@ public class PlayerPathInspector : Editor
             if (p > 1f)
                 p = 1f;
 
-            pm.sampledPositionAndVelocityAndWaypointAtPos(p, out position, out vel, out wp);
+            pm.GetSampledWayPoint(p, out position, out vel, out wp);
         } while (Vector3.Distance(position, pm.waypoints[waypoint].position) <= lastDistanceFromWaypoint && p < 1);
 
         pos = p;

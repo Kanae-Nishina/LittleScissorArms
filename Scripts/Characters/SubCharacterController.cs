@@ -140,12 +140,15 @@ public class SubCharacterController : MonoBehaviour
         {
             //animator.SetBool("isWalk", false);
         }
-        if (GamePad.GetLeftStickAxis(false).y > 0.9f)
+               if (GamePad.GetLeftStickAxis(false).y > 0.9f)
         {
             state = State.eFastMove;
         }
-#else 
+#else
+        float pos = playerPath.currentNextPos;
+        transform.position = playerPath.GetSampledPositionFromPos(pos);
 #endif
+
     }
 
     /* @brief ぶら下がりにおける移動*/

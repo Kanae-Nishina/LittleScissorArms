@@ -24,17 +24,23 @@ public class CameraWork : MonoBehaviour
     public MainCharacterController player;                            //プレイヤー
     public SubCharacterController subPlayer;                        //サブプレイヤー
     public Transform target;                                                        //パスに沿わせる対象のトランスフォーム
+    public List<CameraWaypoint> cameraWaypoints;
 
     private float preInput = 1f;
+    private Vector3 prePosition;
+
+    
     public float zoomOutDist = 5f;
     public float speed = 0.1f;
-    private Vector3 prePosition;
+    public float offsetY = 1f;
+    public float dist = 5f;
+    public Transform lookAt;
+    public Vector3 lookOffset;
+
     //アクティブ時の初期化
     void OnEnable()
     {
         playerPath = GameObject.Find("PlayerPath").GetComponent<PlayerPath>();
-
-
 #if UNITY_EDITOR
         if (!Application.isPlaying)
             EditorApplication.update += FixedUpdate;
@@ -70,7 +76,11 @@ public class CameraWork : MonoBehaviour
         Vector3 lookat = Vector3.zero;
         int currenspos = playerPath.GetCurrentWaypoint();
 
-        Waypoint point = playerPath.waypoints[currenspos];
+        //Waypoint point = playerPath.waypoints[currenspos];
+        if (cameraWaypoints.Count == 0)
+            return;
+
+        CameraWaypoint point = CameraDirection(playerPath.currentPos);
         // if (!player.GetIsPendulum())
         {
             float dir = playerPath.GetInputOnly();
@@ -84,8 +94,9 @@ public class CameraWork : MonoBehaviour
             {
                 newPos += CameraZoomOut(playerPath.target.position);
             }
-            //newPos = point.lookAt.position + point.cameraVec * point.dist;
-            newPos = point.lookAt.position + point.lookAt.right*dir * point.dist;
+
+            newPos = point.lookAt.position + point.cameraVec * point.dist;
+            //newPos = point.lookAt.position + point.lookAt.right * dir * point.dist;
             newPos.y += point.offsetY;
             lookat = point.lookAt.position + point.lookOffset;
         }
@@ -121,7 +132,23 @@ public class CameraWork : MonoBehaviour
         return newPos;
     }
 
+    /* @brief プレイヤーの位置によるカメラのポイント情報*/
+    CameraWaypoint CameraDirection(float pos)
+    {
+        if (cameraWaypoints.Count == 1)
+        {
+            return cameraWaypoints[0];
+        }
+        for (int i = 1; i < cameraWaypoints.Count; i++)
+        {
+            if ((cameraWaypoints[i - 1].currentPos <= pos) && (cameraWaypoints[i].currentPos > pos))
+            {
+                return cameraWaypoints[i - 1];
+            }
+        }
+        return cameraWaypoints[cameraWaypoints.Count - 1];
+    }
     #endregion
-    
+
 
 }

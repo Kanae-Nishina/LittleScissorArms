@@ -212,7 +212,7 @@ public class PlayerPath : MonoBehaviour
         float velocity = 1.0f;
         int waypoint = 0;
 
-        sampledPositionAndVelocityAndWaypointAtPos(currentNextPos, out position, out velocity, out waypoint);
+        GetSampledWayPoint(currentNextPos, out position, out velocity, out waypoint);
 
         UpdateTarget(position, velocity);
 
@@ -235,7 +235,7 @@ public class PlayerPath : MonoBehaviour
     #endregion
 
     /* @brief サンプリングによるポイント情報の取得*/
-    public void sampledPositionAndVelocityAndWaypointAtPos(float pos, out Vector3 position, out float velocity, out int waypoint)
+    public void GetSampledWayPoint(float pos, out Vector3 position, out float velocity, out int waypoint)
     {
         float refDistance = pos * totalDistance;
 
@@ -247,7 +247,6 @@ public class PlayerPath : MonoBehaviour
             {
                 float interpFactor = 1f - (d - refDistance) / samplesDistances[i];
                 position = Vector3.Lerp(positionSamples[i - 1], positionSamples[i], interpFactor);
-
                 velocity = Mathf.Lerp(velocitySamples[i - 1], velocitySamples[i], interpFactor);
 
                 if (pos >= 1)
@@ -259,10 +258,8 @@ public class PlayerPath : MonoBehaviour
                 }
                 else
                 {
-
                     waypoint = waypointSamples[i - 1];
                 }
-
                 return;
             }
         }
@@ -270,6 +267,24 @@ public class PlayerPath : MonoBehaviour
         position = positionSamples[samplesNum - 1];
         velocity = velocitySamples[samplesNum - 1];
         waypoint = waypoints.Length - 1;
+    }
+
+    /* @brief サンプリングによるパス上の位置から座標取得*/
+    public Vector3 GetSampledPositionFromPos(float pos)
+    {
+        float refDistance = pos * totalDistance;
+
+        float d = 0f;
+        for (int i = 1; i < samplesNum; i++)
+        {
+            d += samplesDistances[i];
+            if (d >= refDistance)
+            {
+                float interpFactor = 1f - (d - refDistance) / samplesDistances[i];
+                return Vector3.Lerp(positionSamples[i - 1], positionSamples[i], interpFactor);
+            }
+        }
+        return positionSamples[samplesNum - 1];
     }
 
     /* @brief パスのサンプリングの更新*/
