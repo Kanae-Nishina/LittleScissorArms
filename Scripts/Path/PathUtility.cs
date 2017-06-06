@@ -1,4 +1,4 @@
-﻿/*
+﻿/*!
  * @file PathUtility.cs
  * @brief パス計算のユーティリティ
  * @date 2017/05/24
@@ -10,7 +10,7 @@ using UnityEngine;
 
 public class PathUtility
 {
-    /* @brief ベジェによるクォータニオン補間*/
+    /*! @brief ベジェによるクォータニオン補間*/
     public static Quaternion QuaternionBezier(Quaternion p, Quaternion prevP, Quaternion nextP, Quaternion nextNextP, float stepPos)
     {
         Quaternion an = PathUtility.QuaternionNormalize(Quaternion.Slerp(Quaternion.Slerp(prevP, p, 2f), nextP, 0.5f));
@@ -26,7 +26,7 @@ public class PathUtility
         return Quaternion.Slerp(p12, p23, stepPos);
     }
 
-    /* @brief クォータニオンの正規化*/
+    /*! @brief クォータニオンの正規化*/
     public static Quaternion QuaternionNormalize(Quaternion q)
     {
         float norm = Mathf.Sqrt(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w);
@@ -47,7 +47,7 @@ public class PathUtility
         return q;
     }
 
-    /* @brief ベジェによる2つのベクトルの3次元補間の計算*/
+    /*! @brief ベジェによる2つのベクトルの3次元補間の計算*/
     public static Vector3 Vector3Bezier(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, float t)
     {
         float tt = t * t;
@@ -65,7 +65,7 @@ public class PathUtility
         return B;
     }
 
-    /* @brief 2つのスカラーの補間をベジェで計算*/
+    /*! @brief 2つのスカラーの補間をベジェで計算*/
     public static float FloatBezier(float p0, float p1, float p2, float p3, float t)
     {
         float tt = t * t;

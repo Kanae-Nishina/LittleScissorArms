@@ -1,4 +1,4 @@
-﻿/*
+﻿/*!
  * @file CameraWorkInspector.cs
  * @brief カメラワーク拡張エディター
  * @date 2017/04/21
@@ -22,13 +22,13 @@ public class CameraWorkInspector : Editor
     int scrollSize = 5;
     Vector2 scrollPos = Vector3.zero;
 
-    /* @brief アクティブ時初期化*/
+    /*! @brief アクティブ時初期化*/
     private void OnEnable()
     {
         cameraWayPoint = serializedObject.FindProperty("cameraWaypoints");
     }
 
-    /* @brief インスペクターの表示*/
+    /*! @brief インスペクターの表示*/
     public override void OnInspectorGUI()
     {
         serializedObject.Update();
@@ -68,7 +68,7 @@ public class CameraWorkInspector : Editor
         serializedObject.ApplyModifiedProperties();
     }
 
-    /* @brief 基本設定*/
+    /*! @brief 基本設定*/
     void Base()
     {
         if (!serializedObject.isEditingMultipleObjects)
@@ -79,7 +79,7 @@ public class CameraWorkInspector : Editor
         EditorGUILayout.Slider(serializedObject.FindProperty("zoomOutDist"), 1f, 10f, new GUIContent("ズームアウトでの加算値"));
     }
 
-    /* @brief 一括設定*/
+    /*! @brief 一括設定*/
     void BulkSetting()
     {
         int size = cameraWayPoint.arraySize;
@@ -130,7 +130,7 @@ public class CameraWorkInspector : Editor
 
     }
 
-    /* @brief プレイヤーパスのポイント間のカメラ設定*/
+    /*! @brief プレイヤーパスのポイント間のカメラ設定*/
     void CameraInfoSetting()
     {
         //ポイントが無かったら情報をセットしない
@@ -165,7 +165,7 @@ public class CameraWorkInspector : Editor
         //EditorGUILayout.EndScrollView();
     }
 
-    /* @brief ポイント設定*/
+    /*! @brief ポイント設定*/
     void CameraPointSetting()
     {
         EditorGUILayout.BeginHorizontal();
@@ -185,7 +185,7 @@ public class CameraWorkInspector : Editor
         EditorGUILayout.EndHorizontal();
     }
 
-    /* @brief float型昇順ソート*/
+    /*! @brief float型昇順ソート*/
     private static int CompareByFloat(CameraWaypoint a, CameraWaypoint b)
     {
         if (a.currentPos > b.currentPos)
@@ -196,7 +196,7 @@ public class CameraWorkInspector : Editor
             return 0;
     }
 
-    /* @brief ポイントの追加*/
+    /*! @brief ポイントの追加*/
     private void AddPoint()
     {
         CameraWaypoint item = new CameraWaypoint();
@@ -205,7 +205,7 @@ public class CameraWorkInspector : Editor
         t.cameraWaypoints.Add(item);
     }
 
-    /* @brief ポイントの削除*/
+    /*! @brief ポイントの削除*/
     private void DeletePoint(int index)
     {
         t.cameraWaypoints.RemoveAt(index);
@@ -213,7 +213,7 @@ public class CameraWorkInspector : Editor
             t.cameraWaypoints.Clear();
     }
 
-    /* @brief プレビュー*/
+    /*! @brief プレビュー*/
     void Preview()
     {
         EditorGUILayout.BeginHorizontal();

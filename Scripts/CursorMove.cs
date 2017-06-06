@@ -1,4 +1,4 @@
-﻿/*
+﻿/*!
  *  @file           CursorMove.cs
  *  @brief         カーソル移動処理
  *  @date         2017/04/29
@@ -11,33 +11,33 @@ using UnityEngine;
 
 public class CursorMove : MonoBehaviour
 {
-    /*public宣言*/
+    /*!public宣言*/
     public float moveSpeed = 1f; //移動スピード
     public float rotSpeed = 2f;     //回転スピード
     public float radius = 5f; //半径
     //public float limitAngle = 0f; // 逆回転時の限界角度
     //public Vector3 cursorPos;
 
-    /*private宣言*/
+    /*!private宣言*/
     //private Vector3 targetAngle; // カーソルの角度
     //private Vector3 axis; // 回転角度
     //private bool lookTmp; // フラグの一時保存
     private float time;  //時間
 
-    /* @brief アクティブ時初期化*/
+    /*! @brief アクティブ時初期化*/
     private void OnEnable()
     {
         time = 0f;
     }
 
-    /* @brief   初期化*/
+    /*! @brief   初期化*/
     void Start()
     {
         //フラグ保存
        // lookTmp = MainCharacterController.isLookFront;
     }
 
-    /* @brief   物理演算系更新*/
+    /*! @brief   物理演算系更新*/
     void FixedUpdate()
     {
         //移動

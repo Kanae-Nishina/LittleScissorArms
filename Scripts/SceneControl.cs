@@ -1,4 +1,4 @@
-﻿/*
+﻿/*!
  * @file        SceneControl.cs
  * @brief     シーン管理
  * @date      2017/05/17
@@ -27,13 +27,13 @@ public class SceneControl : MonoBehaviour
 
     static SceneControl instanceThis = null;
 
-    /* @brief インスタンス取得*/
+    /*! @brief インスタンス取得*/
     static SceneControl instance
     {
         get { return instanceThis ?? (instanceThis = FindObjectOfType<SceneControl>()); }
     }
 
-    /* @brief 起動時初期化 */
+    /*! @brief 起動時初期化 */
     private void Awake()
     {
         //シングルトン設定
@@ -68,7 +68,7 @@ public class SceneControl : MonoBehaviour
         audio.Play();
     }
 
-    /* @brief 更新*/
+    /*! @brief 更新*/
     private void Update()
     {
         if (GamePad.GetButtonDown(GamePad.Button.Start) || Input.GetKeyDown(KeyCode.A))
@@ -78,11 +78,12 @@ public class SceneControl : MonoBehaviour
             {
                 sceneNumber = 0;
             }
+
             ChangeScene();
         }
     }
 
-    /* @brief シーン遷移*/
+    /*! @brief シーン遷移*/
     public void ChangeScene()
     {
         fade.FadeIn(fadeTime, () =>
@@ -92,6 +93,11 @@ public class SceneControl : MonoBehaviour
             audio.clip = sceneSoundDic[sceneName[sceneNumber]];
             audio.Play();
             fade.FadeOut(fadeTime, () => { });
+            if (sceneName[sceneNumber] ==  "Maingame")
+            {
+                Application.LoadLevelAdditive("Clear");
+            }
+
         });
     }
 }

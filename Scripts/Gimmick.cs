@@ -1,4 +1,4 @@
-﻿/*
+﻿/*!
  * @file Gimmick.cs
  * @brief ギミック管理クラス
  * @date 2017/05/25

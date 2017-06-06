@@ -1,4 +1,4 @@
-/*
+/*!
 *	@file FXWater4Simple.shader
 *	@brief スタンダードアセットの水シェーダ(一部変更)
 *	@date	2017/05/22

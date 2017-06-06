@@ -1,4 +1,4 @@
-﻿/*
+﻿/*!
  *  @file           MainCharacterController.cs
  *  @brief         メインキャラ操作処理
  *  @date         2017/04/12
@@ -12,7 +12,7 @@ using InputGamePad;
 
 public class MainCharacterController : MonoBehaviour
 {
-    /*public宣言*/
+    /*!public宣言*/
     public float jumpPower = 0f;                      //ジャンプ力
     public float throwPower = 0f;                     //投げる力
     public int rollUpPower = 0;                         //巻き上げる力
@@ -31,7 +31,7 @@ public class MainCharacterController : MonoBehaviour
     public float hookShotRange;
     public float freeNum; // デバッグ用数値
 
-    /*private宣言*/
+    /*!private宣言*/
     private GameObject nearGimmick = null;      //ギミック
     private bool isAbleJump = true;                 //ジャンプ可能フラグ
     private Vector2 Stick;                                  //左スティックの入力値
@@ -93,7 +93,7 @@ public class MainCharacterController : MonoBehaviour
     State state;
     private object newPos;
 
-    /* @brief   初期化*/
+    /*! @brief   初期化*/
     void Start()
     {
         rigidBody = GetComponent<Rigidbody>();
@@ -109,7 +109,7 @@ public class MainCharacterController : MonoBehaviour
         afterTime = nowTime;
     }
 
-    /* @brief   物理演算系更新*/
+    /*! @brief   物理演算系更新*/
     private void FixedUpdate()
     {
         
@@ -119,7 +119,7 @@ public class MainCharacterController : MonoBehaviour
         
     }
 
-    /* @brief   移動*/
+    /*! @brief   移動*/
     void Move()
     {
         switch (state)
@@ -147,7 +147,7 @@ public class MainCharacterController : MonoBehaviour
         }
     }
 
-    /* @brief   メインキャラクターのアクション*/
+    /*! @brief   メインキャラクターのアクション*/
     void Action()
     {
 #if false
@@ -216,7 +216,7 @@ public class MainCharacterController : MonoBehaviour
 #endif
     }
 
-    /* @brief 振子運動による吹き飛び*/
+    /*! @brief 振子運動による吹き飛び*/
     void BlowAway()
     {
         Vector3 newPos = transform.position - (transform.up * 3.5f);
@@ -225,7 +225,7 @@ public class MainCharacterController : MonoBehaviour
     }
 
     #region　振子運動
-    /* @brief 振子運動の設定*/
+    /*! @brief 振子運動の設定*/
     void PendulumSetting()
     {
 #if true
@@ -285,7 +285,7 @@ public class MainCharacterController : MonoBehaviour
 #endif
     }
 
-    /* @brief 巻き上げ*/
+    /*! @brief 巻き上げ*/
     void Hoisting()
     {
         radius -= windUpPower * Stick.y;
@@ -299,7 +299,7 @@ public class MainCharacterController : MonoBehaviour
         }
     }
 
-    /* @brief 振り子の加速*/
+    /*! @brief 振り子の加速*/
     void PendulumAcceleration()
     {
         addAccele -= acceleration * GamePad.GetLeftStickAxis(true, GamePad.Stick.AxisX);
@@ -315,7 +315,7 @@ public class MainCharacterController : MonoBehaviour
         }
     }
 
-    /* @brief 振子運動*/
+    /*! @brief 振子運動*/
     void Pendulum()
     {
         //巻き上げ
@@ -391,27 +391,27 @@ public class MainCharacterController : MonoBehaviour
 #endif
     }
 
-    /* @brief 支点の取得*/
+    /*! @brief 支点の取得*/
     public Vector3 GetFulcrumPosition()
     {
         fulcrum.y *= -1;
         return fulcrum;
     }
 
-    /* @brief 半径の取得*/
+    /*! @brief 半径の取得*/
     public float GetRadius()
     {
         return radius;
     }
 
-    /* @brief 振り子状態かどうかのフラグ取得*/
+    /*! @brief 振り子状態かどうかのフラグ取得*/
     public bool GetIsPendulum()
     {
         return isPendulum;
     }
     #endregion 
 
-    /* @brief   メインキャラクターの移動*/
+    /*! @brief   メインキャラクターの移動*/
     void NormalMove()
     {
         //横移動
@@ -456,7 +456,7 @@ public class MainCharacterController : MonoBehaviour
         }
     }
 
-    /* @brief   コントローラーの入力*/
+    /*! @brief   コントローラーの入力*/
     void InputController()
     {
         Stick = GamePad.GetLeftStickAxis(false);
@@ -464,7 +464,7 @@ public class MainCharacterController : MonoBehaviour
         Rtrg = GamePad.GetTrigger(GamePad.Trigger.RightTrigger, false);
     }
 
-    /* @brief   アニメーション管理*/
+    /*! @brief   アニメーション管理*/
     void Motion()
     {
         #region 歩く
@@ -493,7 +493,7 @@ public class MainCharacterController : MonoBehaviour
 
     }
 
-    /* @brief   ジャンプ*/
+    /*! @brief   ジャンプ*/
     void Jump()
     {
 
@@ -503,7 +503,7 @@ public class MainCharacterController : MonoBehaviour
         isAbleJump = false;
     }
 
-    /* @brief   フックショット*/
+    /*! @brief   フックショット*/
     void HookShot()
     {
         Debug.Log("フックショット発動中");
@@ -548,7 +548,7 @@ public class MainCharacterController : MonoBehaviour
         }
     }
 #if true
-    /* @brief   ターザン*/
+    /*! @brief   ターザン*/
     void Tarzan()
     {
         // ターザン
@@ -613,7 +613,7 @@ public class MainCharacterController : MonoBehaviour
     }
 #endif
 
-    /* @brief 回転補整*/
+    /*! @brief 回転補整*/
     void NormalRotation()
     {
         Vector3 rot = transform.FindChild("body").gameObject.transform.localEulerAngles;
@@ -643,28 +643,26 @@ public class MainCharacterController : MonoBehaviour
         transform.FindChild("body").gameObject.transform.localRotation = Quaternion.Euler(rot);
     }
 
-    /* @brief   メインプレイヤーからカーソルへの角度算出して投げる*/
+    /*! @brief   メインプレイヤーからカーソルへの角度算出して投げる*/
     void ThrowAim(Vector3 player, Vector3 cursor)
     {
-        //throwAngle.x = cursor.x - player.x;
-        //throwAngle.y = cursor.y - player.y;
         throwAngle = cursor - player;
         subCharaRig.AddForce(throwAngle * throwPower);
     }
 
-    /* @brief 自身が振り子の支点になる*/
+    /*! @brief 自身が振り子の支点になる*/
     void Hook()
     {
 
     }
 
-    /* @brief 衝突した瞬間検知*/
+    /*! @brief 衝突した瞬間検知*/
     void ChildOnTriggerEnter(Collider col)
     {
 
     }
 
-    /* @brief   プレイヤーが衝突した*/
+    /*! @brief   プレイヤーが衝突した*/
     void ChildOnTriggerStay(Collider col)
     {
         mainScissor = col;
@@ -699,7 +697,7 @@ public class MainCharacterController : MonoBehaviour
         }
     }
 
-    /* @brief   Clip部分が衝突していない*/
+    /*! @brief   Clip部分が衝突していない*/
     void ChildOnTriggerExit(Collider col)
     {
         mainScissor = col;

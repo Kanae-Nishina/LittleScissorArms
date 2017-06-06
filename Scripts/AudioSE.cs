@@ -1,4 +1,4 @@
-﻿/*
+﻿/*!
  * @file AudioSE.cs
  * @brief サウンド再生処理
  * @date 2017/05/18
@@ -24,14 +24,14 @@ public class AudioSE : MonoBehaviour
         }
     }
 
-    /* @brief ただの再生*/
+    /*! @brief ただの再生*/
     public void OnePlay(string name)
     {
         audioSource.clip = seDic[name];
         audioSource.Play();
     }
 
-    /* @brief 重ねて再生*/
+    /*! @brief 重ねて再生*/
     public void OneShotPlay(string name)
     {
         audioSource.PlayOneShot(seDic[name]);

@@ -1,4 +1,4 @@
-﻿/*
+﻿/*!
 * @file FadeAlpha.shader
 * @brief α値を変更するシェーダ(フェード用)
 * @date    2017/05/17

@@ -1,4 +1,4 @@
-﻿/*
+﻿/*!
  * @file        ChildCollision.cs
  * @brief      子オブジェクトの衝突判定を親オブジェクトへ送る
  * @date      2017/03/14
@@ -11,7 +11,7 @@ using UnityEngine;
 public class ChildCollision : MonoBehaviour
 {
 
-    /*private宣言*/
+    /*!private宣言*/
     public GameObject parent;      //親オブジェクト
 
     // Use this for initialization
@@ -19,20 +19,20 @@ public class ChildCollision : MonoBehaviour
     {
     }
 
-    /* @brief   物理演算系更新*/
+    /*! @brief   物理演算系更新*/
     private void FixedUpdate()
     {
     }
 
 
-    /* @brief   衝突検知*/
+    /*! @brief   衝突検知*/
     private void OnTriggerEnter(Collider col)
     {
         parent.SendMessage("ChildOnTriggerEnter", col);
     }
 
 
-    /* @brief   衝突検知継続*/
+    /*! @brief   衝突検知継続*/
     private void OnTriggerStay(Collider col)
     {
         parent.SendMessage("ChildOnTriggerStay", col);
@@ -46,7 +46,7 @@ public class ChildCollision : MonoBehaviour
     //    }
     //}
 
-    /* @brief   衝突離れ検知*/
+    /*! @brief   衝突離れ検知*/
     private void OnTriggerExit(Collider col)
     {
         parent.SendMessage("ChildOnTriggerExit", col);

@@ -1,4 +1,4 @@
-﻿/*
+﻿/*!
  * @file PlayerPathInspector.cs
  * @brief プレイヤーの移動パスの拡張エディター
  * @date 2017/04/14
@@ -34,7 +34,7 @@ public class PlayerPathInspector : Editor
 
     SerializedProperty waypoints;
 
-    /* @brief アクティブ時のイベント*/
+    /*! @brief アクティブ時のイベント*/
     void OnEnable()
     {
         showPathSamples = EditorPrefs.GetBool("PlayerPath.ShowPathSamples", false);
@@ -43,7 +43,7 @@ public class PlayerPathInspector : Editor
         SettingReorderableList();
     }
 
-    /* @brief インスペクターの表示*/
+    /*! @brief インスペクターの表示*/
     public override void OnInspectorGUI()
     {
         serializedObject.Update();
@@ -68,7 +68,7 @@ public class PlayerPathInspector : Editor
         ((PlayerPath)serializedObject.targetObject).UpdatePathSamples();
     }
     
-    /* @brief シーンビュー表示*/
+    /*! @brief シーンビュー表示*/
     void OnSceneGUI()
     {
         bool isGlobalMode = Tools.pivotRotation == PivotRotation.Global;
@@ -171,7 +171,7 @@ public class PlayerPathInspector : Editor
         pm.ApplyModifiedProperties();
     }
 
-    /* @brief ReorderableList設定*/
+    /*! @brief ReorderableList設定*/
     private void SettingReorderableList()
     {
         SerializedProperty waypoints = serializedObject.FindProperty("waypoints");
@@ -235,7 +235,7 @@ public class PlayerPathInspector : Editor
         };
     }
 
-    /* @brief 文字設定*/
+    /*! @brief 文字設定*/
     private void CharacterPreference()
     {
         boldFoldoutStyle = new GUIStyle(EditorStyles.foldout);
@@ -259,7 +259,7 @@ public class PlayerPathInspector : Editor
         actionButtonStyleRight.fontSize = 11;
     }
 
-    /* @brief 基本設定*/
+    /*! @brief 基本設定*/
     private void BasePreference()
     {
         EditorGUILayout.BeginVertical("Box");
@@ -290,7 +290,7 @@ public class PlayerPathInspector : Editor
         EditorGUILayout.Separator();
     }
     
-    /* @brief ポイントごとの設定*/
+    /*! @brief ポイントごとの設定*/
     private void WaypointPreference(SerializedProperty waypoints)
     {
         if (!waypoints.hasMultipleDifferentValues)
@@ -379,7 +379,7 @@ public class PlayerPathInspector : Editor
         }
     }
 
-    /* @brief ポイントの明確化、追加、削除*/
+    /*! @brief ポイントの明確化、追加、削除*/
     private void WaypointAddOrDel(SerializedProperty waypoints)
     {
         waypointsFoldout = EditorGUILayout.Foldout(waypointsFoldout, "Waypoint " + (currentSelectedWaypoint + 1), boldFoldoutStyle);
@@ -408,7 +408,7 @@ public class PlayerPathInspector : Editor
         }
     }
 
-    /* @brief イベント*/
+    /*! @brief イベント*/
     private void EventPreference()
     {
         eventsFoldout = EditorGUILayout.Foldout(eventsFoldout, "Events", boldFoldoutStyle);
@@ -418,7 +418,7 @@ public class PlayerPathInspector : Editor
         }
     }
 
-    /* @brief プレビュー*/
+    /*! @brief プレビュー*/
     private void Preview()
     {
         EditorGUILayout.BeginHorizontal();
@@ -456,7 +456,7 @@ public class PlayerPathInspector : Editor
         }
     }
 
-    /* @brief ユーティリティ設定*/
+    /*! @brief ユーティリティ設定*/
     private void UtilityPreference()
     {
         utilityFoldout = EditorGUILayout.Foldout(utilityFoldout, "Utility", boldFoldoutStyle);
@@ -486,7 +486,7 @@ public class PlayerPathInspector : Editor
         EditorGUILayout.Separator();
     }
 
-    /* @brief ポイントの挿入と整列*/
+    /*! @brief ポイントの挿入と整列*/
     private void InsertWaypointAt(int index, bool align)
     {
         SerializedProperty waypoints = serializedObject.FindProperty("waypoints");
@@ -551,20 +551,20 @@ public class PlayerPathInspector : Editor
         }
     }
 
-    /* @brief 指定されたポイントの削除*/
+    /*! @brief 指定されたポイントの削除*/
     private void RemoveWaypointAt(int index)
     {
         serializedObject.FindProperty("waypoints").DeleteArrayElementAtIndex(index);
     }
 
-    /* @brief パス全体のポイントの補間値の計算*/
+    /*! @brief パス全体のポイントの補間値の計算*/
     private float CalcPosForWaypointIndex(int index)
     {
         //return (float)index / (float)(serializedObject.FindProperty ("waypoints").arraySize - (((PlayerPath)serializedObject.targetObject).loop ? 0f : 1f));
         return (float)index / (((PlayerPath)target).waypoints.Length - (((PlayerPath)target).loop ? 0f : 1f));
     }
 
-    /* @brief 特定のポイントの補間値の計算*/
+    /*! @brief 特定のポイントの補間値の計算*/
     public float ComputePosForWaypoint(int waypoint)
     {
         PlayerPath pm = (PlayerPath)target;
@@ -604,7 +604,7 @@ public class PlayerPathInspector : Editor
         return pos;
     }
 
-    /* @brief 指定されたポイント到達時の進行方向取得*/
+    /*! @brief 指定されたポイント到達時の進行方向取得*/
     private Quaternion GetFaceForwardForIndex(int index)
     {
         Quaternion rot;
@@ -624,13 +624,13 @@ public class PlayerPathInspector : Editor
         return rot;
     }
 
-    /* @brief ポイントの向きの設定。オブジェクトが前方を向くようにする。*/
+    /*! @brief ポイントの向きの設定。オブジェクトが前方を向くようにする。*/
     private void FaceForward(int index)
     {
         serializedObject.FindProperty("waypoints").GetArrayElementAtIndex(index).FindPropertyRelative("rotation").vector3Value = GetFaceForwardForIndex(index).eulerAngles;
     }
 
-    /* @brief ポジションハンドルの作成*/
+    /*! @brief ポジションハンドルの作成*/
     private Vector3 PositionHandle(Vector3 position, Quaternion rotation, bool mini)
     {
         //float handleSize = HandleUtility.GetHandleSize(position) / (mini ? 2f : 1f);
@@ -653,7 +653,7 @@ public class PlayerPathInspector : Editor
         return position;
     }
 
-    /* @brief パスオブジェクトの作成*/
+    /*! @brief パスオブジェクトの作成*/
     [MenuItem("GameObject/Path/Create new PlayerPath")]
     public static void CreateNewPlayerPath(MenuCommand menuCommand)
     {

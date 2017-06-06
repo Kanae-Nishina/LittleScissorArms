@@ -1,4 +1,4 @@
-﻿/*
+﻿/*!
  * @file CameraWork.cs
  * @brief カメラワーク処理
  * @date 2017/04/19
@@ -17,7 +17,7 @@ using UnityEditor;
 [InitializeOnLoad]
 #endif
 
-/* @brief カメラワーククラス*/
+/*! @brief カメラワーククラス*/
 public class CameraWork : MonoBehaviour
 {
     public PlayerPath playerPath;                                              //プレイヤーの移動
@@ -115,7 +115,7 @@ public class CameraWork : MonoBehaviour
         //target.rotation = newRot;
     }
 
-    /* @brief ズームアウト*/
+    /*! @brief ズームアウト*/
     Vector3 CameraZoomOut(Vector3 pos)
     {
         Vector3 pp = pos;
@@ -124,7 +124,7 @@ public class CameraWork : MonoBehaviour
         return (dir * zoomOutDist);
     }
 
-    /* @brief 振り子状態の時座標*/
+    /*! @brief 振り子状態の時座標*/
     Vector3 PendulumLookAtPosition(Vector3 fulcrumPos, float radius)
     {
         Vector3 newPos = fulcrumPos;
@@ -132,7 +132,7 @@ public class CameraWork : MonoBehaviour
         return newPos;
     }
 
-    /* @brief プレイヤーの位置によるカメラのポイント情報*/
+    /*! @brief プレイヤーの位置によるカメラのポイント情報*/
     CameraWaypoint CameraDirection(float pos)
     {
         if (cameraWaypoints.Count == 1)

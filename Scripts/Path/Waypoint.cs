@@ -1,4 +1,4 @@
-﻿/*
+﻿/*!
  * @file Waypoint.cs
  * @brief ポイント情報クラス
  * @date 2017/05/25
@@ -11,7 +11,7 @@ using System.Collections;
 using System;
 
 [Serializable]
-/* @brief ポイント情報*/
+/*! @brief ポイント情報*/
 public class Waypoint
 {
     [Serializable]
@@ -61,7 +61,7 @@ public class Waypoint
     }
 }
 
-/* @brief カメラポイント情報*/
+/*! @brief カメラポイント情報*/
 [Serializable]
 public class CameraWaypoint
 {
@@ -73,7 +73,7 @@ public class CameraWaypoint
     public Vector3 cameraVec;                               //カメラのある方向
     public Transform lookAt;                                //そのポイントにおける注視点
 
-    /* @brief 初期化*/
+    /*! @brief 初期化*/
     public CameraWaypoint()
     {
         inspectorView = false;

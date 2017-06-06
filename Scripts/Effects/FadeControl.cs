@@ -1,4 +1,4 @@
-﻿/*
+﻿/*!
  * @file FadeControl.cs
  * @brief フェード管理クラス
  * @date    2017/05/17
@@ -13,26 +13,26 @@ public class FadeControl : MonoBehaviour
     FadeBase fade;
     float cutoutRange;      //フェードする範囲
 
-    /* @brief 更新前初期化 */
+    /*! @brief 更新前初期化 */
     void Start()
     {
         Init();
     }
 
-    /* @brief 変更時のセット(Editor上のみ)*/
+    /*! @brief 変更時のセット(Editor上のみ)*/
     private void OnValidate()
     {
         Init();
     }
 
-    /* @brief 共通初期化*/
+    /*! @brief 共通初期化*/
     void Init()
     {
         fade = GetComponent<FadeBase>();
         fade.range = cutoutRange;
     }
 
-    /* @brief フェードイン*/
+    /*! @brief フェードイン*/
     IEnumerator FadeInCoroutine(float time,System.Action action)
     {
         var endFrame = new WaitForEndOfFrame();
@@ -50,7 +50,7 @@ public class FadeControl : MonoBehaviour
         }
     }
 
-    /* @brief フェードアウト*/
+    /*! @brief フェードアウト*/
     IEnumerator FadeOutCoroutine(float time,System.Action action)
     {
         var endFrame = new WaitForEndOfFrame();
@@ -69,7 +69,7 @@ public class FadeControl : MonoBehaviour
         }
     }
 
-    /* @brief フェードイン呼び出し*/
+    /*! @brief フェードイン呼び出し*/
     public Coroutine FadeIn(float time,System.Action action)
     {
         StopAllCoroutines();
@@ -80,7 +80,7 @@ public class FadeControl : MonoBehaviour
         return FadeIn(time, null);
     }
 
-    /* @brief フェードアウト呼び出し*/
+    /*! @brief フェードアウト呼び出し*/
     public Coroutine FadeOut(float time,System.Action action)
     {
         StopAllCoroutines();

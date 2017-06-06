@@ -1,4 +1,4 @@
-﻿/*
+﻿/*!
  * @file FadeImage.cs
  * @brief フェードするイメージクラス
  * @date    2017/05/17
@@ -16,7 +16,7 @@ public class FadeImage : UnityEngine.UI.Graphic, FadeBase
     [SerializeField, Range(0f, 1f)]
     private float cutoutRange;
 
-    /* @brief フェード範囲*/
+    /*! @brief フェード範囲*/
     public float range
     {
         get { return cutoutRange; }
@@ -34,7 +34,7 @@ public class FadeImage : UnityEngine.UI.Graphic, FadeBase
         UpdateMaskTexture(maskTexture);
     }
 
-    /* @brief マスクの更新*/
+    /*! @brief マスクの更新*/
     private void UpdateMaskCutOut(float range)
     {
         enabled = true;
@@ -45,7 +45,7 @@ public class FadeImage : UnityEngine.UI.Graphic, FadeBase
         }
     }
 
-    /* @brief マスクのテクスチャ更新*/
+    /*! @brief マスクのテクスチャ更新*/
     private void UpdateMaskTexture(Texture texture)
     {
         material.SetTexture("_MaskTex", texture);

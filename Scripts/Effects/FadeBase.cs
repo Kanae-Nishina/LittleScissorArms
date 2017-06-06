@@ -1,4 +1,4 @@
-﻿/*
+﻿/*!
  * @file FadeBase.cs
  * @brief フェードの基底
  * @date    2017/05/17
@@ -7,7 +7,7 @@
 using System.Collections;
 using UnityEngine;
 
-/* @brief フェードのベース */
+/*! @brief フェードのベース */
 public interface FadeBase
 {
     float range { get; set; }

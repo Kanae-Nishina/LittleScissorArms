@@ -1,4 +1,4 @@
-﻿/*
+﻿/*!
  * @file WaterHeight.cs
  * @brief 水面の高さ取得クラス
  * @date 2017/05/19
@@ -19,7 +19,7 @@ public class WaterHeight : MonoBehaviour
     List<Transform> childObj;    //浮き沈みする対象オブジェクト(子オブジェクト) 
     List<Vector3> childStartPos;
 
-    /* @brief 初期化*/
+    /*! @brief 初期化*/
     void Start()
     {
         mat = targetMr.sharedMaterial;
@@ -32,7 +32,7 @@ public class WaterHeight : MonoBehaviour
         }
     }
 
-    /* @brief 更新*/
+    /*! @brief 更新*/
     void Update()
     {
 
@@ -52,7 +52,7 @@ public class WaterHeight : MonoBehaviour
         }
     }
 
-    /* @brief 頂点オフセットの計算*/
+    /*! @brief 頂点オフセットの計算*/
     Vector3 GerstnerOffset4(int no,Vector2 xzVtx, Vector4 steepness, Vector4 amp, Vector4 freq, Vector4 speed, Vector4 dirAB, Vector4 dirCD)
     {
         float t = Time.timeSinceLevelLoad-diff*no;

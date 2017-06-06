@@ -1,4 +1,4 @@
-﻿/*
+﻿/*!
  *  @file           SubCharacterController.cs
  *  @brief         サブキャラ操作処理
  *  @date         2017/04/12
@@ -12,7 +12,7 @@ using InputGamePad;
 
 public class SubCharacterController : MonoBehaviour
 {
-    /*public宣言*/
+    /*!public宣言*/
     public float jumpPower = 0f;                      //ジャンプ力
     public Transform partnerPos;                     //他プレイヤーの位置
     public Collider partnerCol;                         //他プレイヤーの当たり判定
@@ -21,8 +21,9 @@ public class SubCharacterController : MonoBehaviour
     public float subPlayerStopPos = 0f;             //サブキャラが止まる距離
     public float subPlayerDistance = 0f;            //サブキャラの近づく距離
     public static Collider subScissor;
+    public Camera camera;                               //カメラ
 
-    /*private宣言*/
+    /*!private宣言*/
     private GameObject nearGimmick = null;          //ギミック
     private bool isAbleJump = true;                        //ジャンプ可能フラグ
     private float Ltrg;
@@ -63,7 +64,7 @@ public class SubCharacterController : MonoBehaviour
     }
     State state;
 
-    /* @brief   初期化*/
+    /*! @brief   初期化*/
     void Start()
     {
         rigidBody = GetComponent<Rigidbody>();
@@ -72,16 +73,17 @@ public class SubCharacterController : MonoBehaviour
         state = State.eFollow;
         animator = GetComponent<Animator>();
         partnerPos = GameObject.FindGameObjectWithTag("Player").transform;
+        camera.depthTextureMode = DepthTextureMode.Depth;
     }
 
-    /* @brief   物理演算系更新*/
+    /*! @brief   物理演算系更新*/
     private void FixedUpdate()
     {
         //Action();
         Move();
     }
 
-    /* @brief   移動*/
+    /*! @brief   移動*/
     void Move()
     {
         Ltrg = GamePad.GetTrigger(GamePad.Trigger.LeftTrigger, false);
@@ -101,7 +103,7 @@ public class SubCharacterController : MonoBehaviour
 
     }
 
-    /* @brief プレイヤーの元へ高速移動*/
+    /*! @brief プレイヤーの元へ高速移動*/
     void FastMove()
     {
         transform.position = Vector3.Lerp(transform.position, partnerPos.position, 0.5f);
@@ -111,7 +113,7 @@ public class SubCharacterController : MonoBehaviour
         }
     }
 
-    /* @brief   サブキャラクターの移動*/
+    /*! @brief   サブキャラクターの移動*/
     void FollowMove()
     {
 #if true
@@ -151,7 +153,7 @@ public class SubCharacterController : MonoBehaviour
 
     }
 
-    /* @brief ぶら下がりにおける移動*/
+    /*! @brief ぶら下がりにおける移動*/
     void HungingMove()
     {
         // オブジェクトをはさむ
@@ -163,7 +165,7 @@ public class SubCharacterController : MonoBehaviour
     }
 
     #region 振子
-    /* @brief 振子運動の設定 */
+    /*! @brief 振子運動の設定 */
     void PendulumSetting()
     {
         radius = Vector3.Distance(transform.position, partnerPos.position);
@@ -179,7 +181,7 @@ public class SubCharacterController : MonoBehaviour
         partnerRig.isKinematic = true;
     }
 
-    /* @brief 巻き上げ*/
+    /*! @brief 巻き上げ*/
     void Hoisting()
     {
         radius -= windUpPower * GamePad.GetLeftStickAxis(true).y;
@@ -193,7 +195,7 @@ public class SubCharacterController : MonoBehaviour
         }
     }
 
-    /* @brief 振り子の加速*/
+    /*! @brief 振り子の加速*/
     void PendulumAcceleration()
     {
         addAccele -= acceleration * GamePad.GetLeftStickAxis(true, GamePad.Stick.AxisX);
@@ -209,7 +211,7 @@ public class SubCharacterController : MonoBehaviour
         }
     }
 
-    /* @brief 振子状態における移動*/
+    /*! @brief 振子状態における移動*/
     void Pendulum()
     {
         //巻き上げ
@@ -281,19 +283,19 @@ public class SubCharacterController : MonoBehaviour
     }
     #endregion
 
-    /* @brief   ジャンプ*/
+    /*! @brief   ジャンプ*/
     void Jump()
     {
         rigidBody.AddForce(Vector3.up * jumpPower);
         isAbleJump = false;
     }
 
-    /* @brief 衝突した瞬間検知*/
+    /*! @brief 衝突した瞬間検知*/
     void ChildOnTriggerEnter(Collider col)
     {
     }
 
-    /* @brief   プレイヤーが衝突している*/
+    /*! @brief   プレイヤーが衝突している*/
     void ChildOnTriggerStay(Collider col)
     {
         subScissor = col;
@@ -303,6 +305,13 @@ public class SubCharacterController : MonoBehaviour
             nearGimmick = subScissor.gameObject;
             nearGimmickPos = transform.position;
             state = State.eHung;
+        }
+        else if (state != State.eHung && col.transform.tag == "Goal" && Ltrg > 0.2)
+        {
+            nearGimmick = subScissor.gameObject;
+            nearGimmickPos = transform.position;
+            state = State.eHung;
+            camera.depth = -5; // ゴールのカメラに切り替え
         }
         //ギミックを離す
         else if (Ltrg < 0.2 && nearGimmick != null)
@@ -316,7 +325,7 @@ public class SubCharacterController : MonoBehaviour
         }
     }
 
-    /* @brief   Clip部分が衝突していない*/
+    /*! @brief   Clip部分が衝突していない*/
     void ChildOnTriggerExit(Collider col)
     {
         //触れていたオブジェクトがギミックの時
