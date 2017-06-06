@@ -232,7 +232,7 @@ public class CameraWorkInspector : Editor
                 Quaternion rotation = Quaternion.identity;
                 float velocity = 0f;
                 int waypoint = 0;
-                pmo.sampledPositionAndVelocityAndWaypointAtPos(pmo.currentPos, out position, out velocity, out waypoint);
+                pmo.GetSampledWayPoint(pmo.currentPos, out position, out velocity, out waypoint);
                 pmo.UpdateTarget(position, velocity);
             }
         }
