@@ -43,11 +43,13 @@ namespace InputGamePad
         {
             Vector2 axis = Vector3.zero;
 
-            if (Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.RightArrow))
+            if (Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.RightArrow)
+                || Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.DownArrow))
             {
                 if (Input.GetKey(KeyCode.LeftArrow)) axis.x = -1f;
                 else if (Input.GetKey(KeyCode.RightArrow)) axis.x = 1f;
-
+                if (Input.GetKey(KeyCode.UpArrow)) axis.y = 1f;
+                else if (Input.GetKey(KeyCode.DownArrow)) axis.y = -1f;
                 return axis;
             }
             try
@@ -163,7 +165,9 @@ namespace InputGamePad
                 case Button.Start: return KeyCode.Joystick1Button7;
 
                 case Button.Dash: return KeyCode.Joystick1Button1;
-                case Button.Jump: return KeyCode.Joystick1Button0;
+                case Button.Jump:
+                    if (Input.GetKeyDown(KeyCode.Space))
+                        return KeyCode.Space; return KeyCode.Joystick1Button0;
                 case Button.Decide: return KeyCode.Joystick1Button0;
                 case Button.Cancel: return KeyCode.Joystick1Button1;
             }

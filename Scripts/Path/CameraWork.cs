@@ -29,7 +29,7 @@ public class CameraWork : MonoBehaviour
     private float preInput = 1f;
     private Vector3 prePosition;
 
-    
+
     public float zoomOutDist = 5f;
     public float speed = 0.1f;
     public float offsetY = 1f;
@@ -76,12 +76,10 @@ public class CameraWork : MonoBehaviour
         Vector3 lookat = Vector3.zero;
         int currenspos = playerPath.GetCurrentWaypoint();
 
-        //Waypoint point = playerPath.waypoints[currenspos];
         if (cameraWaypoints.Count == 0)
             return;
 
         CameraWaypoint point = CameraDirection(playerPath.currentPos);
-        // if (!player.GetIsPendulum())
         {
             float dir = playerPath.GetInputOnly();
             if (dir == 0)
@@ -89,30 +87,18 @@ public class CameraWork : MonoBehaviour
             else
                 preInput = dir;
 
-            //newPos = globalLookAt.position + playerPath.waypoints[currenspos].moveOffset;
             if (player.isCarry)
             {
                 newPos += CameraZoomOut(playerPath.target.position);
             }
 
             newPos = point.lookAt.position + point.cameraVec * point.dist;
-            //newPos = point.lookAt.position + point.lookAt.right * dir * point.dist;
             newPos.y += point.offsetY;
             lookat = point.lookAt.position + point.lookOffset;
         }
-        // else
-        //{
-        //lookat = PendulumLookAtPosition(player.GetFulcrumPosition(), player.GetRadius());
-        //newPos = lookat;
-        //     newPos = PendulumLookAtPosition(player.GetFulcrumPosition(), player.GetRadius());
-        //newPos += Vector3.back * point.dist;
-        //lookat = target.position + Vector3.forward;
-        //}
         prePosition = transform.position;
         target.position = Vector3.Lerp(target.position, newPos, 0.1f);
         target.LookAt(lookat);
-        //target.LookAt(globalLookAt.position + playerPath.waypoints[currenspos].lookOffset);
-        //target.rotation = newRot;
     }
 
     /*! @brief ズームアウト*/
@@ -150,5 +136,17 @@ public class CameraWork : MonoBehaviour
     }
     #endregion
 
-
+#if UNITY_EDITOR
+    public void OnDrawGizmos()
+    {
+        //for (int i = 0; i < cameraWaypoints.Count; i++)
+        //{
+        //    var index = cameraWaypoints[i];
+        //    Gizmos.matrix = Matrix4x4.TRS(index.position, Quaternion.one, Vector3.one);
+        //    Gizmos.color = Color.white;
+        //    Gizmos.DrawFrustum(index.position, 90, 0.25f, 0.01f, 1.78f);
+        //    Gizmos.matrix = Matrix4x4.identity;
+        //}
+    }
+#endif
 }

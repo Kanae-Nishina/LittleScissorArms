@@ -66,12 +66,14 @@ public class Waypoint
 public class CameraWaypoint
 {
     public bool inspectorView;                   //インスペクターに描画するかどうか
-    public float currentPos;
+    public float currentPos;                        //プレイヤーパス上の位置
     public float offsetY;                                   //Y軸移動のオフセット
     public float dist;                                     //距離
     public Vector3 lookOffset;                              //注視のオフセット
     public Vector3 cameraVec;                               //カメラのある方向
     public Transform lookAt;                                //そのポイントにおける注視点
+    public Vector3 position;                       //ポイントのある座標
+    public Quaternion rotation;                 //そのポイントの回転
 
     /*! @brief 初期化*/
     public CameraWaypoint()

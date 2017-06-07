@@ -67,7 +67,7 @@ public class CameraWorkInspector : Editor
 
         serializedObject.ApplyModifiedProperties();
     }
-
+    
     /*! @brief 基本設定*/
     void Base()
     {
@@ -201,8 +201,11 @@ public class CameraWorkInspector : Editor
     {
         CameraWaypoint item = new CameraWaypoint();
         item.currentPos = selectPos;
+        item.position = t.transform.position;
+        item.rotation = t.transform.rotation;
         item.lookAt = t.player.transform;
         t.cameraWaypoints.Add(item);
+        
     }
 
     /*! @brief ポイントの削除*/

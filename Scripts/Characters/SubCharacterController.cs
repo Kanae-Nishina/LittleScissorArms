@@ -50,6 +50,7 @@ public class SubCharacterController : MonoBehaviour
     //=======
     //=======
     public PlayerPath playerPath;
+    public float distance = 0.01f;
     //=======
     #endregion
 
@@ -146,11 +147,18 @@ public class SubCharacterController : MonoBehaviour
         {
             state = State.eFastMove;
         }
-#else
-        float pos = playerPath.currentNextPos;
-        transform.position = playerPath.GetSampledPositionFromPos(pos);
-#endif
 
+        float pos = playerPath.GetCurrentPosFromPosition(transform.position);
+#else
+        float pos = playerPath.currentPos;
+        if(pos>0)
+        {
+            pos -= distance;
+        }
+        Vector3 newPos= playerPath.GetSampledPositionFromPos(pos);
+        newPos.y = transform.position.y;
+        transform.position = newPos;
+#endif
     }
 
     /*! @brief ぶら下がりにおける移動*/

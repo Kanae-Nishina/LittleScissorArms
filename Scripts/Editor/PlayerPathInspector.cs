@@ -78,14 +78,10 @@ public class PlayerPathInspector : Editor
         SerializedProperty waypoints = pm.FindProperty("waypoints");
         Handles.matrix = ((PlayerPath)pm.targetObject).transform.localToWorldMatrix;
 
-
         for (int i = 0; i < waypoints.arraySize; i++)
         {
-
             SerializedProperty wp = waypoints.GetArrayElementAtIndex(i);
-
             //float handleSize = HandleUtility.GetHandleSize(wp.FindPropertyRelative("position").vector3Value);
-
             float size = HandleUtility.GetHandleSize(wp.FindPropertyRelative("position").vector3Value);
             if (Handles.Button(wp.FindPropertyRelative("position").vector3Value,
                     Quaternion.identity, size / 10f, size / 5f, Handles.CubeHandleCap))
@@ -96,7 +92,6 @@ public class PlayerPathInspector : Editor
 
             if (currentSelectedWaypoint == i)
             {
-
                 //座標
                 wp.FindPropertyRelative("position").vector3Value = PositionHandle(wp.FindPropertyRelative("position").vector3Value, isGlobalMode ? Quaternion.identity : Quaternion.Euler(wp.FindPropertyRelative("rotation").vector3Value), false);
 
