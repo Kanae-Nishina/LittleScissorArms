@@ -84,7 +84,7 @@ namespace InputGamePad
             }
             else if (axis == Stick.AxisY)
             {
-                diff = Mathf.Abs(preLeftStick.x - now.x);
+                diff = Mathf.Abs(preLeftStick.y - now.y);
             }
 
             if (diff < stickMiddle)
@@ -100,7 +100,6 @@ namespace InputGamePad
             return 0f;
         }
 
-        //左スティックのY軸を入力した瞬間
 
         //トリガー入力状態
         public static float GetTrigger(Trigger trigger, bool raw)
@@ -108,10 +107,18 @@ namespace InputGamePad
             string name = "";
             if (trigger == Trigger.LeftTrigger || trigger == Trigger.L_Scissors)
             {
+                if (Input.GetKey(KeyCode.Q))
+                {
+                    return 1;
+                }
                 name = "TriggersL";
             }
             else if (trigger == Trigger.RightTrigger || trigger == Trigger.R_Scissors)
             {
+                if (Input.GetKey(KeyCode.E))
+                {
+                    return 1;
+                }
                 name = "TriggersR";
             }
 
@@ -167,7 +174,13 @@ namespace InputGamePad
                 case Button.Dash: return KeyCode.Joystick1Button1;
                 case Button.Jump:
                     if (Input.GetKeyDown(KeyCode.Space))
-                        return KeyCode.Space; return KeyCode.Joystick1Button0;
+                    {
+                        return KeyCode.Space;
+                    }
+                    else
+                    {
+                        return KeyCode.Joystick1Button0;
+                    }
                 case Button.Decide: return KeyCode.Joystick1Button0;
                 case Button.Cancel: return KeyCode.Joystick1Button1;
             }

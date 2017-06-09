@@ -26,10 +26,6 @@ public class CameraWork : MonoBehaviour
     public Transform target;                                                        //パスに沿わせる対象のトランスフォーム
     public List<CameraWaypoint> cameraWaypoints;
 
-    private float preInput = 1f;
-    private Vector3 prePosition;
-
-
     public float zoomOutDist = 5f;
     public float speed = 0.1f;
     public float offsetY = 1f;
@@ -72,32 +68,40 @@ public class CameraWork : MonoBehaviour
     //パスに沿う対象の更新
     public void UpdateTarget()
     {
+        int currenspos = playerPath.GetCurrentWaypoint();
+        CameraWaypoint point = CameraDirection(playerPath.currentPos);
+        if (!player.GetIsPendulum())
+        {
+            NormalMove(point);
+        }
+        else
+        {
+            PendulumLookAtPosition(point);
+        }
+
+    }
+
+    /*! @brief 通常移動*/
+    void NormalMove(CameraWaypoint point)
+    {
         Vector3 newPos = target.position;
         Vector3 lookat = Vector3.zero;
-        int currenspos = playerPath.GetCurrentWaypoint();
 
         if (cameraWaypoints.Count == 0)
             return;
 
-        CameraWaypoint point = CameraDirection(playerPath.currentPos);
+        Vector3 zoom = Vector3.zero;
+        if (player.isSublayerCarry)
         {
-            float dir = playerPath.GetInputOnly();
-            if (dir == 0)
-                dir = preInput;
-            else
-                preInput = dir;
-
-            if (player.isCarry)
-            {
-                newPos += CameraZoomOut(playerPath.target.position);
-            }
-
-            newPos = point.lookAt.position + point.cameraVec * point.dist;
-            newPos.y += point.offsetY;
-            lookat = point.lookAt.position + point.lookOffset;
+            zoom = CameraZoomOut(playerPath.target.position);
         }
-        prePosition = transform.position;
+
+        newPos = (point.lookAt.position + point.cameraVec * point.dist) + zoom;
+        newPos.y += point.offsetY;
+
         target.position = Vector3.Lerp(target.position, newPos, 0.1f);
+
+        lookat = point.lookAt.position + point.lookOffset;
         target.LookAt(lookat);
     }
 
@@ -111,11 +115,16 @@ public class CameraWork : MonoBehaviour
     }
 
     /*! @brief 振り子状態の時座標*/
-    Vector3 PendulumLookAtPosition(Vector3 fulcrumPos, float radius)
+    void PendulumLookAtPosition(CameraWaypoint point)
     {
-        Vector3 newPos = fulcrumPos;
-        newPos.y -= radius;
-        return newPos;
+        Vector3 lookat = Vector3.zero;
+        Vector3 zoom = Vector3.zero;
+        Vector3 newPos = player.GetFulcrumPosition();
+        newPos.y -= player.GetRadius() / 2;
+        lookat = newPos;
+        newPos +=point.cameraVec*point.dist;
+        target.position = Vector3.Lerp(target.position, newPos, 0.05f);
+        target.LookAt(lookat);
     }
 
     /*! @brief プレイヤーの位置によるカメラのポイント情報*/

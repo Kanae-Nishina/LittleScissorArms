@@ -15,19 +15,21 @@ public class ReSpawn : MonoBehaviour
     public float height;
     public PlayerPath playerPath;
     public float fadeTime = 1f;                   //フェードにかける時間
+    public UnityEngine.Events.UnityEvent events = new UnityEngine.Events.UnityEvent();
+
     [SerializeField]
-    FadeControl fade = null;
+    private FadeControl fade = null;
 
     private void Start() { }
 
     /*! @brief 衝突判定*/
     private void OnTriggerEnter(Collider other)
     {
-
         if (other.transform.tag == "Player")
         {
             fade.FadeIn(fadeTime, () =>
             {
+                events.Invoke();
                 playerPath.Respawn(respawnPos, height);
                 fade.FadeOut(fadeTime, () =>
                 {

@@ -11,16 +11,21 @@ using UnityEditor;
 using UnityEditorInternal;
 using System;
 
+/*! @brief カメラワークのエディタ拡張*/
 [CustomEditor(typeof(CameraWork))]
 [CanEditMultipleObjects]
 public class CameraWorkInspector : Editor
 {
-    SerializedProperty cameraWayPoint;
-    CameraWork t;
-    private float selectPos;
-    private int selectPoint;
-    int scrollSize = 5;
-    Vector2 scrollPos = Vector3.zero;
+    SerializedProperty cameraWayPoint;             /*! カメラのポイント*/
+    CameraWork t;                                                       /*! 拡張するカメラワークスクリプト*/
+    private float selectPos;                                        /*! 現在のプレイヤーパス上の位置*/
+    private int scrollSize = 100;                                 /*! スクロールサイズ*/
+    private Vector2 scrollPos = Vector3.zero;      /*! スクロースビューの位置*/
+    private bool isBaseFoldout=true;                     /*! 基本設定の折りたたみフラグ*/
+    private bool isBulkSettingFoldout = true;      /*! 一括設定の折りたたみフラグ*/
+    private bool isWaypointFoldout = true;          /*! ポイント情報の折りたたみフラグ*/
+    private bool isPreviewFoldout = true;             /*! プレビューの折りたたみフラグ*/
+
 
     /*! @brief アクティブ時初期化*/
     private void OnEnable()
@@ -33,136 +38,134 @@ public class CameraWorkInspector : Editor
     {
         serializedObject.Update();
         t = target as CameraWork;
-
-        #region 基本設定
-        EditorGUILayout.BeginVertical("Box");
-        Base();
-        EditorGUILayout.EndVertical();
-        EditorGUILayout.Separator();
-        #endregion
-
-        #region  一括設定
-        EditorGUILayout.BeginVertical("Box");
-        BulkSetting();
-        EditorGUILayout.EndVertical();
-        EditorGUILayout.Separator();
-        #endregion
-
-        #region ポイントの設定
-        EditorGUILayout.BeginVertical("Box");
-        CameraInfoSetting();
-        CameraPointSetting();
-        EditorGUILayout.EndVertical();
-        EditorGUILayout.Separator();
-        #endregion
-
-        #region プレビュー
-        EditorGUILayout.BeginVertical("Box");
-        Preview();
-        EditorGUILayout.EndVertical();
-        EditorGUILayout.Separator();
-        #endregion
-
-        EditorUtility.SetDirty(t);    //更新
-
+        Base();                                     //基本設定
+        BulkSetting();                        //一括設定
+        CameraInfoSetting();          //ポイント情報設定
+        Preview();                               //プレビュー
+        EditorUtility.SetDirty(t);
         serializedObject.ApplyModifiedProperties();
     }
     
     /*! @brief 基本設定*/
     void Base()
     {
-        if (!serializedObject.isEditingMultipleObjects)
+        isBaseFoldout = EditorGUILayout.Foldout(isBaseFoldout, "基本設定", true);
+        if (isBaseFoldout)
         {
-            EditorGUILayout.PropertyField(serializedObject.FindProperty("target"), new GUIContent("カメラ"));
+            EditorGUILayout.BeginVertical("Box");
+            if (!serializedObject.isEditingMultipleObjects)
+            {
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("target"), new GUIContent("カメラ"));
+            }
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("player"), new GUIContent("プレイヤー"));
+            EditorGUILayout.Slider(serializedObject.FindProperty("zoomOutDist"), 1f, 10f, new GUIContent("ズームアウトでの加算値"));
+            EditorGUILayout.EndVertical(); //Box
         }
-        EditorGUILayout.PropertyField(serializedObject.FindProperty("player"), new GUIContent("プレイヤー"));
-        EditorGUILayout.Slider(serializedObject.FindProperty("zoomOutDist"), 1f, 10f, new GUIContent("ズームアウトでの加算値"));
+        EditorGUILayout.Separator();
     }
 
     /*! @brief 一括設定*/
     void BulkSetting()
     {
-        int size = cameraWayPoint.arraySize;
-        EditorGUIUtility.labelWidth = 100;
-        EditorGUILayout.BeginHorizontal();
-        EditorGUILayout.Slider(serializedObject.FindProperty("offsetY"), 1f, 10f, new GUIContent("Y軸オフセット"));
-        if (GUILayout.Button("一括設定"))
+        isBulkSettingFoldout = EditorGUILayout.Foldout(isBulkSettingFoldout, "一括設定", true);
+        if (isBulkSettingFoldout)
         {
-            for (int i = 0; i < size; i++)
+            EditorGUILayout.BeginVertical("Box");
+            int size = cameraWayPoint.arraySize;
+            EditorGUIUtility.labelWidth = 100;
+            EditorGUILayout.BeginHorizontal(); //offsetY
+            EditorGUILayout.Slider(serializedObject.FindProperty("offsetY"), 1f, 10f, new GUIContent("Y軸オフセット"));
+            if (GUILayout.Button("一括設定"))
             {
-                cameraWayPoint.GetArrayElementAtIndex(i).FindPropertyRelative("offsetY").floatValue = serializedObject.FindProperty("offsetY").floatValue;
+                for (int i = 0; i < size; i++)
+                {
+                    cameraWayPoint.GetArrayElementAtIndex(i).FindPropertyRelative("offsetY").floatValue = serializedObject.FindProperty("offsetY").floatValue;
+                }
             }
-        }
-        EditorGUILayout.EndHorizontal();
+            EditorGUILayout.EndHorizontal(); //offsetY
 
-        EditorGUILayout.BeginHorizontal();
-        EditorGUILayout.Slider(serializedObject.FindProperty("dist"), 5f, 20f, new GUIContent("距離"));
-        if (GUILayout.Button("一括設定"))
-        {
-            for (int i = 0; i < size; i++)
+            EditorGUILayout.BeginHorizontal(); //dist
+            EditorGUILayout.Slider(serializedObject.FindProperty("dist"), 5f, 20f, new GUIContent("距離"));
+            if (GUILayout.Button("一括設定"))
             {
-                cameraWayPoint.GetArrayElementAtIndex(i).FindPropertyRelative("dist").floatValue = serializedObject.FindProperty("dist").floatValue;
+                for (int i = 0; i < size; i++)
+                {
+                    cameraWayPoint.GetArrayElementAtIndex(i).FindPropertyRelative("dist").floatValue = serializedObject.FindProperty("dist").floatValue;
+                }
             }
-        }
-        EditorGUILayout.EndHorizontal();
+            EditorGUILayout.EndHorizontal(); //dist
 
-        EditorGUILayout.BeginHorizontal();
-        EditorGUILayout.PropertyField(serializedObject.FindProperty("lookAt"), new GUIContent("注視点"));
-        if (GUILayout.Button("一括設定"))
-        {
-            for (int i = 0; i < size; i++)
+            EditorGUILayout.BeginHorizontal(); //lookat
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("lookAt"), new GUIContent("注視点"));
+            if (GUILayout.Button("一括設定"))
             {
-                cameraWayPoint.GetArrayElementAtIndex(i).FindPropertyRelative("lookAt").objectReferenceValue = serializedObject.FindProperty("lookAt").objectReferenceValue;
+                for (int i = 0; i < size; i++)
+                {
+                    cameraWayPoint.GetArrayElementAtIndex(i).FindPropertyRelative("lookAt").objectReferenceValue = serializedObject.FindProperty("lookAt").objectReferenceValue;
+                }
             }
-        }
-        EditorGUILayout.EndHorizontal();
+            EditorGUILayout.EndHorizontal(); //lookat
 
-        EditorGUILayout.BeginHorizontal();
-        EditorGUILayout.PropertyField(serializedObject.FindProperty("lookOffset"), new GUIContent("注視点オフセット"));
-        if (GUILayout.Button("一括設定"))
-        {
-            for (int i = 0; i < size; i++)
+            EditorGUILayout.BeginHorizontal(); //lookOffset
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("lookOffset"), new GUIContent("注視点オフセット"));
+            if (GUILayout.Button("一括設定"))
             {
-                cameraWayPoint.GetArrayElementAtIndex(i).FindPropertyRelative("lookOffset").vector3Value = serializedObject.FindProperty("lookOffset").vector3Value;
+                for (int i = 0; i < size; i++)
+                {
+                    cameraWayPoint.GetArrayElementAtIndex(i).FindPropertyRelative("lookOffset").vector3Value = serializedObject.FindProperty("lookOffset").vector3Value;
+                }
             }
+            EditorGUILayout.EndHorizontal(); //lookOffset
+            EditorGUILayout.EndVertical(); //Box
         }
-        EditorGUILayout.EndHorizontal();
-
+        EditorGUILayout.Separator();
     }
 
     /*! @brief プレイヤーパスのポイント間のカメラ設定*/
     void CameraInfoSetting()
     {
-        //ポイントが無かったら情報をセットしない
-        int size = cameraWayPoint.arraySize;
-        if (size == 0) return;
-        
-        //scrollPos = EditorGUILayout.BeginScrollView(scrollPos,"Box");
+        isWaypointFoldout = EditorGUILayout.Foldout(isWaypointFoldout, "ポイント設定", true);
+        if (isWaypointFoldout)
         {
-            for (int i = 0; i < size; i++)
+            EditorGUILayout.BeginVertical("Box"); //Box1
+            //ポイントが無かったら情報をセットしない
+            int size = cameraWayPoint.arraySize;
+            if (size == 0) return;
+
+            EditorGUILayout.BeginVertical(GUI.skin.box); //skinBox
+            scrollSize = EditorGUILayout.IntSlider("スクロールサイズ", scrollSize, 100, 500);
+            scrollPos = EditorGUILayout.BeginScrollView(scrollPos, GUILayout.Height(scrollSize));
             {
-                EditorGUILayout.BeginVertical("Box");
-                EditorGUILayout.BeginHorizontal();
-                bool view = cameraWayPoint.GetArrayElementAtIndex(i).FindPropertyRelative("inspectorView").boolValue;
-                cameraWayPoint.GetArrayElementAtIndex(i).FindPropertyRelative("inspectorView").boolValue = EditorGUILayout.Foldout(view, "#" + (i + 1), true);
-                if (GUILayout.Button("削除", GUILayout.Width(60)))
+                for (int i = 0; i < size; i++)
                 {
-                    DeletePoint(i);
+                    EditorGUILayout.BeginVertical("Box"); //Box2
+                    EditorGUILayout.BeginHorizontal();
+                    bool view = cameraWayPoint.GetArrayElementAtIndex(i).FindPropertyRelative("inspectorView").boolValue;
+                    cameraWayPoint.GetArrayElementAtIndex(i).FindPropertyRelative("inspectorView").boolValue = EditorGUILayout.Foldout(view, "#" + (i + 1), true);
+                    if (GUILayout.Button("削除", GUILayout.Width(60)))
+                    {
+                        DeletePoint(i);
+                    }
+                    EditorGUILayout.EndHorizontal();
+                    if (cameraWayPoint.GetArrayElementAtIndex(i).FindPropertyRelative("inspectorView").boolValue)
+                    {
+                        EditorGUILayout.PropertyField(cameraWayPoint.GetArrayElementAtIndex(i).FindPropertyRelative("currentPos"), new GUIContent("パス上の位置"));
+                        EditorGUILayout.Slider(cameraWayPoint.GetArrayElementAtIndex(i).FindPropertyRelative("offsetY"), 0f, 20f, new GUIContent("Y軸オフセット"));
+                        EditorGUILayout.Slider(cameraWayPoint.GetArrayElementAtIndex(i).FindPropertyRelative("dist"), 0f, 20f, new GUIContent("距離"));
+                        EditorGUILayout.PropertyField(cameraWayPoint.GetArrayElementAtIndex(i).FindPropertyRelative("cameraVec"), new GUIContent("カメラのある方向"));
+                        EditorGUILayout.PropertyField(cameraWayPoint.GetArrayElementAtIndex(i).FindPropertyRelative("lookAt"), new GUIContent("注視点"));
+                        EditorGUILayout.PropertyField(cameraWayPoint.GetArrayElementAtIndex(i).FindPropertyRelative("lookOffset"), new GUIContent("注視点オフセット"));
+                    }
+                    EditorGUILayout.EndVertical(); //Box2
                 }
-                EditorGUILayout.EndHorizontal();
-                if (cameraWayPoint.GetArrayElementAtIndex(i).FindPropertyRelative("inspectorView").boolValue)
-                {
-                    EditorGUILayout.PropertyField(cameraWayPoint.GetArrayElementAtIndex(i).FindPropertyRelative("currentPos"), new GUIContent("パス上の位置"));
-                    EditorGUILayout.Slider(cameraWayPoint.GetArrayElementAtIndex(i).FindPropertyRelative("offsetY"), 0f, 20f, new GUIContent("Y軸オフセット"));
-                    EditorGUILayout.Slider(cameraWayPoint.GetArrayElementAtIndex(i).FindPropertyRelative("dist"), 0f, 20f, new GUIContent("距離"));
-                    EditorGUILayout.PropertyField(cameraWayPoint.GetArrayElementAtIndex(i).FindPropertyRelative("cameraVec"), new GUIContent("カメラのある方向"));
-                    EditorGUILayout.PropertyField(cameraWayPoint.GetArrayElementAtIndex(i).FindPropertyRelative("lookAt"), new GUIContent("注視点"));
-                    EditorGUILayout.PropertyField(cameraWayPoint.GetArrayElementAtIndex(i).FindPropertyRelative("lookOffset"), new GUIContent("注視点オフセット"));
-                }
-                EditorGUILayout.EndVertical();
             }
+            EditorGUILayout.EndScrollView();
+            EditorGUILayout.EndVertical(); //skinBox
+
+            CameraPointSetting();
+            EditorGUILayout.EndVertical();//Box1
         }
-        //EditorGUILayout.EndScrollView();
+        EditorGUILayout.Separator();
     }
 
     /*! @brief ポイント設定*/
@@ -205,7 +208,6 @@ public class CameraWorkInspector : Editor
         item.rotation = t.transform.rotation;
         item.lookAt = t.player.transform;
         t.cameraWaypoints.Add(item);
-        
     }
 
     /*! @brief ポイントの削除*/
@@ -219,28 +221,32 @@ public class CameraWorkInspector : Editor
     /*! @brief プレビュー*/
     void Preview()
     {
-        EditorGUILayout.BeginHorizontal();
-
-        EditorGUIUtility.labelWidth = 70;
-        t.playerPath.currentPos = EditorGUILayout.Slider("座標", t.playerPath.currentPos, 0f, 1f);
-        selectPos = t.playerPath.currentPos;
-        EditorGUIUtility.labelWidth = 120;
-
-        for (int i = 0; i < targets.Length; i++)
+        isPreviewFoldout = EditorGUILayout.Foldout(isPreviewFoldout, "プレビュー", true);
+        if (isPreviewFoldout)
         {
-            if (!t.playerPath.updateTransform && t.playerPath.target != null)
+            EditorGUILayout.BeginVertical("Box"); //Box
+            EditorGUILayout.BeginHorizontal();
+            EditorGUIUtility.labelWidth = 70;
+            t.playerPath.currentPos = EditorGUILayout.Slider("座標", t.playerPath.currentPos, 0f, 1f);
+            selectPos = t.playerPath.currentPos;
+            EditorGUIUtility.labelWidth = 120;
+            for (int i = 0; i < targets.Length; i++)
             {
-                PlayerPath pmo = t.playerPath;
-                Vector3 position = Vector3.zero;
-                Quaternion rotation = Quaternion.identity;
-                float velocity = 0f;
-                int waypoint = 0;
-                pmo.GetSampledWayPoint(pmo.currentPos, out position, out velocity, out waypoint);
-                pmo.UpdateTarget(position, velocity);
+                if (!t.playerPath.updateTransform && t.playerPath.target != null)
+                {
+                    PlayerPath pmo = t.playerPath;
+                    Vector3 position = Vector3.zero;
+                    Quaternion rotation = Quaternion.identity;
+                    float velocity = 0f;
+                    int waypoint = 0;
+                    pmo.GetSampledWayPoint(pmo.currentPos, out position, out velocity, out waypoint);
+                    pmo.UpdateTarget(position, velocity);
+                }
             }
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.EndVertical(); //Box
         }
-
-        EditorGUILayout.EndHorizontal();
+        EditorGUILayout.Separator();
     }
 
 }

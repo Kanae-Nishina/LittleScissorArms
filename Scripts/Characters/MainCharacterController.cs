@@ -24,14 +24,16 @@ public class MainCharacterController : MonoBehaviour
     public Rigidbody subCharaRig;                     //他プレイヤーの当たり判定
     public Animator animator;
     public PlayerPath playerPath;                     //プレイヤーの移動軌跡
-    public bool isCarry = false;                         //メインプレイヤー運んでいるか
     public static bool isLookFront = true;        //前を見ているか
     public static bool isSubScissor;                //サブキャラがはさんでいるか
     public static Collider mainScissor;
     public float hookShotRange;
-    public float freeNum; // デバッグ用数値
+    public bool isSublayerCarry = false;             //サブキャラ運んでいるか
+
 
     /*!private宣言*/
+    private bool isItemCarry = false;                   //アイテムを運んでいるか
+    private bool isCarry = false;
     private GameObject nearGimmick = null;      //ギミック
     private bool isAbleJump = true;                 //ジャンプ可能フラグ
     private Vector2 Stick;                                  //左スティックの入力値
@@ -79,7 +81,7 @@ public class MainCharacterController : MonoBehaviour
     private Vector3 prePos;
     //=======
 
-    private enum State
+    public enum State
     {
         eNormal = 0,    //通常
 
@@ -98,7 +100,6 @@ public class MainCharacterController : MonoBehaviour
     {
         rigidBody = GetComponent<Rigidbody>();
         subCharaCol.GetComponent<Collider>();
-
         cursor = GameObject.Find("cursor");
 
         state = State.eNormal;
@@ -112,11 +113,9 @@ public class MainCharacterController : MonoBehaviour
     /*! @brief   物理演算系更新*/
     private void FixedUpdate()
     {
-        
         InputController();
-        Motion();
         Move();
-        
+        Motion();
     }
 
     /*! @brief   移動*/
@@ -210,6 +209,8 @@ public class MainCharacterController : MonoBehaviour
             rigidBody.useGravity = true;
             subCharaRig.useGravity = true;
             subCharaRig.isKinematic = false;
+            animator.SetBool("isLeave", true);
+
             state = State.eBlowAway;
         }
 
@@ -424,7 +425,7 @@ public class MainCharacterController : MonoBehaviour
         }
 
         //カーソルの出現フラグ
-        cursor.SetActive(isCarry);
+        cursor.SetActive(isSublayerCarry);
 
         //キャラクターの中央から足元にかけて、接地判定用のラインを引く
         Vector3 newPos = transform.position - (transform.up * 3.5f);
@@ -433,11 +434,43 @@ public class MainCharacterController : MonoBehaviour
 
         Debug.DrawLine(transform.position, newPos, Color.cyan);
 
-        // サブキャラを持ち上げる
-        if (isCarry)
+        if (isSublayerCarry)
         {
+            // サブキャラを持ち上げる
+            subCharaRig.velocity = Vector3.zero;
             animator.SetBool("isScissorsBack", true);
             nearGimmick.transform.position = gameObject.transform.FindChild("Alli").transform.position;
+        }
+        else if (isItemCarry)
+        {
+            // アイテムを持ち上げる
+            animator.SetBool("isScissors", true);
+            nearGimmick.transform.position = gameObject.transform.FindChild("Hand").transform.position;
+        }
+
+        // ギミックを離す
+        if (Rtrg < 0.5 && nearGimmick != null)
+        {
+            if (isSublayerCarry)
+            {
+                ThrowAim(transform.position, cursor.transform.position);
+                isSublayerCarry = false;
+                animator.SetBool("isScissorsBack", false);
+                animator.SetBool("isLeave", true);
+
+            }
+            else if (isItemCarry)
+            {
+                isItemCarry = false;
+                animator.SetBool("isScissors", false);
+            }
+
+            isCarry = false;
+
+            nearGimmickPos = transform.position * -2f;
+            nearGimmick = null;
+            HookShotInitFlg = true;
+            isSubScissor = false;
         }
 
         // ターザン
@@ -462,6 +495,15 @@ public class MainCharacterController : MonoBehaviour
         Stick = GamePad.GetLeftStickAxis(false);
         Ltrg = GamePad.GetTrigger(GamePad.Trigger.LeftTrigger, false);
         Rtrg = GamePad.GetTrigger(GamePad.Trigger.RightTrigger, false);
+    }
+
+    /*! @brief トリガーの入力取得*/
+    public float GetTrigger(GamePad.Trigger trigger)
+    {
+        if (trigger == GamePad.Trigger.LeftTrigger)
+            return Ltrg;
+        else
+            return Rtrg;
     }
 
     /*! @brief   アニメーション管理*/
@@ -496,11 +538,14 @@ public class MainCharacterController : MonoBehaviour
     /*! @brief   ジャンプ*/
     void Jump()
     {
-
         animator.SetBool("isNormalJump", true);
-
-        rigidBody.AddForce(Vector3.up * jumpPower);
         isAbleJump = false;
+    }
+
+    /*! @brief　上に力を加える*/
+    public void AddJumpPower()
+    {
+        rigidBody.AddForce(Vector3.up * jumpPower);
     }
 
     /*! @brief   フックショット*/
@@ -538,6 +583,7 @@ public class MainCharacterController : MonoBehaviour
             }
 
             // 目標へ移動
+
             //x軸移動
             playerPath.SetInput(dir, rollUpPower);
 
@@ -656,10 +702,19 @@ public class MainCharacterController : MonoBehaviour
 
     }
 
+    /*! @brief 行動状況の取得*/
+    public State GetState()
+    {
+        return state;
+    }
+
     /*! @brief 衝突した瞬間検知*/
     void ChildOnTriggerEnter(Collider col)
     {
-
+        if (col.tag == "Gimmick")
+        {
+            col.GetComponent<Gimmick>().isGimmick = true;
+        }
     }
 
     /*! @brief   プレイヤーが衝突した*/
@@ -667,33 +722,21 @@ public class MainCharacterController : MonoBehaviour
     {
         mainScissor = col;
 
-        //if (col.transform.tag == "SubPlayer")
-        //{
-        //    Debug.Log("Rで持てる");
-        //}
-
-        //触れているギミック取得
-        if (mainScissor.transform.tag == "SubPlayer" && Rtrg > 0.8)
+        //触れているサブキャラ取得
+        if (Rtrg > 0.8 && !isCarry && (mainScissor.tag == "SubPlayer" || mainScissor.tag == "Item"))
         {
             nearGimmick = mainScissor.gameObject;
-            nearGimmickPos = transform.position * -2f;
+            nearGimmickPos = transform.position;
             isCarry = true;
-            subCharaRig.velocity = Vector3.zero;
-        }
-        //ギミックを離す
-        else if (Rtrg < 0.2 && nearGimmick != null)
-        {
-            isCarry = false;
-            nearGimmickPos = transform.position * -2f;
-            nearGimmick = null;
-            HookShotInitFlg = true;
 
-            // サブキャラを投げる
-            ThrowAim(transform.position, cursor.transform.position);
-            animator.SetBool("isScissorsBack", false);
-            animator.SetBool("isLeave", true);
-
-            isSubScissor = false;
+            if (mainScissor.tag == "SubPlayer")
+            {
+                isSublayerCarry = true;
+            }
+            else if (mainScissor.tag == "Item")
+            {
+                isItemCarry = true;
+            }
         }
     }
 

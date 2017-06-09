@@ -22,6 +22,7 @@ public class SubCharacterController : MonoBehaviour
     public float subPlayerDistance = 0f;            //サブキャラの近づく距離
     public static Collider subScissor;
     public Camera camera;                               //カメラ
+    public MainCharacterController player;
 
     /*!private宣言*/
     private GameObject nearGimmick = null;          //ギミック
@@ -107,9 +108,11 @@ public class SubCharacterController : MonoBehaviour
     /*! @brief プレイヤーの元へ高速移動*/
     void FastMove()
     {
+        animator.SetBool("isDash", true);
         transform.position = Vector3.Lerp(transform.position, partnerPos.position, 0.5f);
-        if(Vector3.Distance(transform.position,partnerPos.position)<1f)
+        if (Vector3.Distance(transform.position, partnerPos.position) < 1f)
         {
+            animator.SetBool("isDash", false);
             state = State.eFollow;
         }
     }
@@ -123,7 +126,6 @@ public class SubCharacterController : MonoBehaviour
         float Distance = Direction.sqrMagnitude;
         Direction.y = 0f;
 
-
         //メインプレイヤーのキャラが一定以上でなければ、サブキャラは近寄らない
         if (Distance >= subPlayerDistance + subPlayerStopPos)
         {
@@ -133,31 +135,35 @@ public class SubCharacterController : MonoBehaviour
 
             // 移動
             transform.position = Vector3.SmoothDamp(transform.position, targetPos, ref velocity, 0.2f);
+            animator.SetBool("isWalk", true);
         }
-        //else if (Distance > subPlayerDistance + subPlayerStopPos + 2f)
+        //else if (Distance > subPlayerDistance + subPlayerStopPos)
         //{
-        //    animatorSubPlayer.SetBool("isJump", true);
-        //    Jump(); // あぁ^～心がぴょんぴょんするんじゃぁ^～
+        //    //Jump(); // あぁ^～心がぴょんぴょんするんじゃぁ^～
         //}
         else
         {
-            //animator.SetBool("isWalk", false);
+            animator.SetBool("isWalk", false);
         }
-               if (GamePad.GetLeftStickAxis(false).y > 0.9f)
+
+        if (GamePad.GetLeftStickAxis(false, GamePad.Stick.AxisY) > 0)
         {
             state = State.eFastMove;
         }
 
-        float pos = playerPath.GetCurrentPosFromPosition(transform.position);
-#else
-        float pos = playerPath.currentPos;
-        if(pos>0)
+        if (player.isSublayerCarry)
         {
-            pos -= distance;
+            animator.SetBool("isScissorUp", true);
         }
-        Vector3 newPos= playerPath.GetSampledPositionFromPos(pos);
-        newPos.y = transform.position.y;
-        transform.position = newPos;
+        else
+        {
+            animator.SetBool("isScissorUp", false);
+        }
+
+#else
+
+        float pos = playerPath.GetCurrentPosFromPosition(transform.position);
+        transform.position += playerPath.GetSampledPositionFromPos(pos,transform.position);
 #endif
     }
 
@@ -176,6 +182,8 @@ public class SubCharacterController : MonoBehaviour
     /*! @brief 振子運動の設定 */
     void PendulumSetting()
     {
+        float pos = playerPath.GetCurrentPosFromPosition(transform.position);
+        transform.position += playerPath.GetSampledPositionFromPos(pos, transform.position);
         radius = Vector3.Distance(transform.position, partnerPos.position);
         maxRadius = radius;
         Vector3 targetDir = transform.position - partnerPos.position;
@@ -330,6 +338,8 @@ public class SubCharacterController : MonoBehaviour
             nearGimmick = null;
             state = State.eFollow;
             //Destroy(gameObject.AddComponent<FixedJoint>())
+
+            
         }
     }
 

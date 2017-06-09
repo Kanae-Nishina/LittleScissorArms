@@ -91,7 +91,6 @@ public class PlayerPath : MonoBehaviour
     /*! @brief 移動ベクトル*/
     public Vector3 GetAddPotision()
     {
-        DoUpdate();
         return addPosition;
     }
 
@@ -106,6 +105,7 @@ public class PlayerPath : MonoBehaviour
     {
         inputX = input;
         moveMag = mag;
+        DoUpdate();
     }
 
     /*! @brief 入力による移動量取得*/
@@ -271,7 +271,7 @@ public class PlayerPath : MonoBehaviour
     }
 
     /*! @brief サンプリングによるパス上の位置から座標取得*/
-    public Vector3 GetSampledPositionFromPos(float pos)
+    public Vector3 GetSampledPositionFromPos(float pos,Vector3 targetPosition)
     {
         float refDistance = pos * totalDistance;
         Vector3 position = Vector3.zero;
@@ -287,6 +287,8 @@ public class PlayerPath : MonoBehaviour
             }
         }
         position = transform.TransformPoint(positionSamples[samplesNum - 1]);
+        position -= targetPosition;
+        position.y = 0f;
         return position;
     }
 
