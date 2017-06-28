@@ -24,7 +24,6 @@ public class MainCharacterController : MonoBehaviour
     public Animator animator;                           /*! アニメーター*/
     public PlayerPath playerPath;                     /*! プレイヤーの移動軌跡*/
     public static bool isLookFront = true;       /*! 前を見ているか*/
-    public static bool isSubScissor;                   /*! サブキャラがはさんでいるか*/
     public static Collider mainScissor;              /*! 挟み判定をするコライダー*/
     public bool isSublayerCarry = false;           /*! サブキャラ運んでいるか*/
     public Transform leftHand;                          /*! 左手*/
@@ -143,7 +142,7 @@ public class MainCharacterController : MonoBehaviour
         Pendulum();
 
         //振り子の終了
-        if (!isSubScissor)
+        if (!SubCharacterController.isScissor)
         {
             isPendulum = false;
             rigidBody.useGravity = true;
@@ -414,20 +413,15 @@ public class MainCharacterController : MonoBehaviour
             isCarry = false;
             
             nearGimmick = null;
-            isSubScissor = false;
         }
 
         //振り子
-        if (SubCharacterController.subScissor != null)
+        if (SubCharacterController.isScissor)
         {
-            if (SubCharacterController.subScissor.transform.tag == "Hook" && Ltrg > 0.8f && Stick.y > 0.8f)
+            if (Stick.y > 0.8f)
             {
-                isSubScissor = true;
+                state = State.eAction;
             }
-        }
-        if (isSubScissor)
-        {
-            state = State.eAction;
         }
     }
 

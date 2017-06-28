@@ -4,7 +4,6 @@
  *  @date         2017/04/12
  *  @author      金澤信芳
  */
-
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -13,27 +12,25 @@ using InputGamePad;
 /*! @brief サブキャラクター管理クラス*/
 public class SubCharacterController : MonoBehaviour
 {
-    public float jumpPower = 0f;                         /*! ジャンプ力*/
     public float beThrownPower;                       /*! 投げられる力*/
-    public Transform partnerPos;                       /*! 他プレイヤーの位置*/
-    public Rigidbody partnerRig;                        /*! 他プレイヤーの当たり判定*/
-    public Animator animator;                             /*! アニメーター*/
-    public float subPlayerStopPos = 0f;             /*! サブキャラが止まる距離*/
-    public float subPlayerDistance = 0f;            /*! サブキャラの近づく距離*/
-    public static Collider subScissor;                   /*! 挟むよう当たり判定*/
-    public Camera mainCamera;                           /*! カメラ*/
-    public CameraWork camerawork;                 /*! カメラワーク管理クラス*/
-    public MainCharacterController player;      /*! メインキャラクター管理クラス*/
-    public Transform mainLeftHand;                  /*! メインキャラクターの左手*/
-    public Transform mainRightHand;               /*! メインキャラクターの右手*/
-    public float lookAngle = 0f;                            /*! サブキャラの向く角度*/
-    
+    public float moveStopDist = 0f;             /*! サブキャラが止まる距離*/
+    public GameObject mainChara;            /*! メインキャラクター*/
+    [System.NonSerialized]
+    public static bool isScissor;           /*! 鋏み*/
+
+    [SerializeField]
+    private Transform mainLeftHand;                  /*! メインキャラクターの左手*/
+    [SerializeField]
+    private Transform mainRightHand;               /*! メインキャラクターの右手*/
+    private Transform mainCharaTrans;                       /*! 他プレイヤーの位置*/
+    private MainCharacterController mainCharaController;      /*! メインキャラクター管理クラス*/
+    private CameraWork camerawork;                 /*! カメラワーク管理クラス*/
     private GameObject nearGimmick = null;  /*! ギミック*/
-    private float Ltrg;                                              /*! 左トリガー*/
     private Vector3 nearGimmickPos;                /*! 最も近いギミックの座標*/
-    private Vector3 throwAngle;                         /*! メインプレイヤーとカーソルの角度*/
+    private float leftTrigger;                                              /*! 左トリガー*/
     private Rigidbody rigidBody;                         /*! リジッドボディ*/
-    private Vector3 rot;                                          /*! 向いている方向*/
+    private Animator animator;                             /*! アニメーター*/
+                                                           // private Vector3 rot;                                          /*! 向いている方向*/
     private GameObject cursor;                          /*! カーソル取得*/
 
     private enum State         /*! サブキャラクターの状態*/
@@ -52,14 +49,13 @@ public class SubCharacterController : MonoBehaviour
     void Start()
     {
         cursor = GameObject.Find("cursor");
+        camerawork = GameObject.Find("CameraWork").GetComponent<CameraWork>();
         rigidBody = GetComponent<Rigidbody>();
-        rot.y = partnerPos.transform.eulerAngles.y + lookAngle;
-        transform.localRotation = Quaternion.Euler(rot);
 
         state = State.eFollow;
         animator = GetComponent<Animator>();
-        partnerPos = GameObject.FindGameObjectWithTag("Player").transform;
-        mainCamera.depthTextureMode = DepthTextureMode.Depth;
+        mainCharaTrans = mainChara.transform;
+        mainCharaController = mainChara.GetComponent<MainCharacterController>();
     }
 
     /*! @brief   物理演算系更新*/
@@ -71,7 +67,7 @@ public class SubCharacterController : MonoBehaviour
     /*! @brief   移動*/
     void Move()
     {
-        Ltrg = GamePad.GetTrigger(GamePad.Trigger.LeftTrigger, false);
+        leftTrigger = GamePad.GetTrigger(GamePad.Trigger.LeftTrigger, false);
 
         switch (state)
         {
@@ -97,8 +93,8 @@ public class SubCharacterController : MonoBehaviour
     void FastMove()
     {
         animator.SetBool("isDash", true);
-        transform.position = Vector3.Lerp(transform.position, partnerPos.position, 0.5f);
-        if (Vector3.Distance(transform.position, partnerPos.position) < 1f)
+        transform.position = Vector3.Lerp(transform.position, mainCharaTrans.position, 0.5f);
+        if (Vector3.Distance(transform.position, mainCharaTrans.position) < 1f)
         {
             animator.SetBool("isDash", false);
             state = State.eFollow;
@@ -108,19 +104,14 @@ public class SubCharacterController : MonoBehaviour
     /*! @brief   サブキャラクターの移動*/
     void FollowMove()
     {
-        Vector3 mainPlayerPos = partnerPos.position;
-        Vector3 Direction = mainPlayerPos - transform.position;
-        float Distance = Direction.sqrMagnitude;
-        Direction.y = 0f;
-
-        //回転
-        FollowRotation();
+        Vector3 dir = mainCharaTrans.position - transform.position;
+        float dist = dir.sqrMagnitude;
 
         //メインプレイヤーのキャラが一定以上でなければ、サブキャラは近寄らない
-        if (Distance >= subPlayerDistance + subPlayerStopPos)
+        if (dist >= moveStopDist * moveStopDist)
         {
             // 目的地を算出
-            Vector3 targetPos = partnerPos.TransformPoint(new Vector3(0.5f, -1f, -1.0f));
+            Vector3 targetPos = mainCharaTrans.TransformPoint(new Vector3(0.5f, -1f, -1.0f));
             Vector3 velocity = Vector3.zero;
 
             // 移動
@@ -132,6 +123,9 @@ public class SubCharacterController : MonoBehaviour
             animator.SetBool("isWalk", false);
         }
 
+        //回転
+        FollowRotation();
+
         if (GamePad.GetLeftStickAxis(false, GamePad.Stick.AxisY) > 0)
         {
             state = State.eFastMove;
@@ -141,7 +135,7 @@ public class SubCharacterController : MonoBehaviour
     /*! @brief 通常移動の向き*/
     void FollowRotation()
     {
-        Vector3 lookatPos = partnerPos.position + camerawork.GetCameraVec();
+        Vector3 lookatPos = mainCharaTrans.position + camerawork.GetCameraVec();
         lookatPos.y = transform.position.y;
         transform.LookAt(lookatPos);
     }
@@ -149,6 +143,8 @@ public class SubCharacterController : MonoBehaviour
     /*! @brief サブプレイヤーのステートを運ばれるに変更*/
     public void SetStateBeCarried()
     {
+        animator.SetBool("isWalk", false);
+        animator.SetBool("isScissorUp", true);
         state = State.eBeCarried;
     }
 
@@ -160,23 +156,14 @@ public class SubCharacterController : MonoBehaviour
         //位置
         Vector3 pos = (mainLeftHand.position + mainRightHand.position) / 2;
         transform.position = pos;
-
-        //回転
-        rot = transform.localEulerAngles;
-        if (MainCharacterController.isLookFront)
-        {
-            rot.y = partnerPos.transform.eulerAngles.y + lookAngle;
-        }
-        else
-        {
-            rot.y = partnerPos.transform.eulerAngles.y - lookAngle;
-        }
-        transform.localRotation = Quaternion.Euler(rot);
-
-        animator.SetBool("isScissorUp", true);
         
-        rigidBody.useGravity = !player.isSublayerCarry;
-        if (!player.isSublayerCarry)
+        //回転
+        Vector3 rot = transform.localEulerAngles;
+        rot.y = mainCharaTrans.transform.eulerAngles.y;
+        transform.localEulerAngles = rot;
+        
+        rigidBody.useGravity = false;
+        if (!mainCharaController.isSublayerCarry)
         {
             state = State.eBeThrown;
         }
@@ -185,18 +172,20 @@ public class SubCharacterController : MonoBehaviour
     /*! @brief 投げられる*/
     void BeThrown()
     {
-        throwAngle = cursor.GetComponent<CursorMove>().throwPos- transform.position;
+        rigidBody.useGravity = true;
+        Vector3 throwAngle = cursor.GetComponent<CursorMove>().throwPos - transform.position;
         rigidBody.AddForce(throwAngle * beThrownPower);
         state = State.eFollow;
+        animator.SetBool("isScissorUp", false);
     }
 
     /*! @brief ぶら下がりにおける移動*/
     void HungingMove()
     {
-        if (Ltrg < 0.2 && nearGimmick != null)
+        if (leftTrigger < 0.2 && nearGimmick != null)
         {
-            MainCharacterController.isSubScissor = false;
             nearGimmick = null;
+            isScissor = false;
             state = State.eFollow;
             return;
         }
@@ -208,31 +197,31 @@ public class SubCharacterController : MonoBehaviour
         Vector3 lookat = transform.position + camerawork.GetCameraVec();
         transform.LookAt(lookat);
     }
-    
+
     /*! @brief 衝突した瞬間検知*/
     void ChildOnTriggerEnter(Collider col)
     {
-        animator.SetBool("isScissorUp", false);
+        //animator.SetBool("isScissorUp", false);
     }
 
     /*! @brief   衝突の継続を検知*/
     void ChildOnTriggerStay(Collider col)
     {
-        subScissor = col;
         //触れているギミック取得
-        if (state != State.eHung && col.transform.tag == "Hook" && Ltrg > 0.2)
+        if (state != State.eHung && col.transform.tag == "Hook" && leftTrigger > 0.2)
         {
-            nearGimmick = subScissor.gameObject;
+            nearGimmick = col.gameObject;
             nearGimmickPos = nearGimmick.transform.position;
             state = State.eHung;
+            isScissor = true;
         }
-        else if (state != State.eHung && col.transform.tag == "Goal" && Ltrg > 0.2)
+        else if (state != State.eHung && col.transform.tag == "Goal" && leftTrigger > 0.2)
         {
-            nearGimmick = subScissor.gameObject;
+            nearGimmick = col.gameObject;
             nearGimmickPos = transform.position;
-            
+
             state = State.eHung;
-            mainCamera.depth = -5; // ゴールのカメラに切り替え
+            //mainCamera.depth = -5; // ゴールのカメラに切り替え
             GameObject.Find("SceneManager").GetComponent<SceneControl>().AddClearScene();
         }
     }
