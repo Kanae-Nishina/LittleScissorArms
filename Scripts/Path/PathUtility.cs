@@ -8,6 +8,7 @@
 using System.Collections;
 using UnityEngine;
 
+/*! @brief パス計算のユーテリティ*/
 public class PathUtility
 {
     /*! @brief ベジェによるクォータニオン補間*/

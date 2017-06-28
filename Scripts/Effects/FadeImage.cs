@@ -3,18 +3,20 @@
  * @brief フェードするイメージクラス
  * @date    2017/05/17
  * @author 仁科香苗
+* @note 参考:テラシュールブログ(http://tsubakit1.hateblo.jp/entry/20140505/1399289078)
  */
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
+/*! @brief フェードするイメージクラス*/
 public class FadeImage : UnityEngine.UI.Graphic, FadeBase
 {
     [SerializeField]
-    private Texture maskTexture = null;
+    private Texture maskTexture = null;         /*! マスクテクスチャ*/
 
     [SerializeField, Range(0f, 1f)]
-    private float cutoutRange;
+    private float cutoutRange;                          /*! フェード範囲*/
 
     /*! @brief フェード範囲*/
     public float range
@@ -27,7 +29,7 @@ public class FadeImage : UnityEngine.UI.Graphic, FadeBase
         }
     }
 
-    // Use this for initialization
+    /*! 初期化*/
     protected override void Start()
     {
         base.Start();
@@ -53,6 +55,7 @@ public class FadeImage : UnityEngine.UI.Graphic, FadeBase
     }
 
 #if UNITY_EDITOR
+    /*! @brief 変更時のセット(Editor上のみ)*/
     protected override void OnValidate()
     {
         base.OnValidate();

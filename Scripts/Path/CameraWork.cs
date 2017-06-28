@@ -9,7 +9,7 @@ using UnityEngine.Events;
 using System.Collections;
 using System.Collections.Generic;
 using System;
-
+using UnityEngine.SceneManagement;
 #if UNITY_EDITOR
 using UnityEditor;
 
@@ -20,20 +20,21 @@ using UnityEditor;
 /*! @brief カメラワーククラス*/
 public class CameraWork : MonoBehaviour
 {
-    public PlayerPath playerPath;                                              //プレイヤーの移動
-    public MainCharacterController player;                            //プレイヤー
-    public SubCharacterController subPlayer;                        //サブプレイヤー
-    public Transform target;                                                        //パスに沿わせる対象のトランスフォーム
-    public List<CameraWaypoint> cameraWaypoints;
+    public PlayerPath playerPath;                                              /*! プレイヤーの移動パス*/
+    public MainCharacterController player;                            /*! プレイヤー管理クラス*/
+    public SubCharacterController subPlayer;                       /*! サブプレイヤー管理暮らし*/
+    public Transform target;                                                        /*! パスに沿わせる対象のトランスフォーム*/
+    public List<CameraWaypoint> cameraWaypoints;        /*! カメラの方向リスト*/
+    public float zoomOutDist = 5f;                                             /*! ズームアウトの距離*/
+    public float speed = 0.1f;                                                         /*! 移動速度(0~1)*/
+    public float offsetY = 1f;                                                           /*! Y軸のオフセット*/
+    public float dist = 5f;                                                                 /*! 距離*/
+    public Transform lookAt;                                                        /*! 注視対象*/
+    public Vector3 lookOffset;                                                      /*! 注視点のオフセット*/
 
-    public float zoomOutDist = 5f;
-    public float speed = 0.1f;
-    public float offsetY = 1f;
-    public float dist = 5f;
-    public Transform lookAt;
-    public Vector3 lookOffset;
+    private CameraWaypoint point;                                           /*! カメラのポイント*/
 
-    //アクティブ時の初期化
+    /*! @brief アクティブ時の初期化*/
     void OnEnable()
     {
         playerPath = GameObject.Find("PlayerPath").GetComponent<PlayerPath>();
@@ -43,7 +44,7 @@ public class CameraWork : MonoBehaviour
 #endif
     }
 
-    //非アクティブ時の処理
+    /*! @brief 非アクティブ時の処理*/
     void OnDisable()
     {
 #if UNITY_EDITOR
@@ -52,24 +53,17 @@ public class CameraWork : MonoBehaviour
 #endif
     }
 
-    //更新前初期化
-    void Start()
-    {
-    }
-
-    //更新
+    /*! @brief 更新*/
     void FixedUpdate()
     {
         UpdateTarget();
     }
 
     #region     更新関係
-
-    //パスに沿う対象の更新
+    /*! @brief 移動更新*/
     public void UpdateTarget()
     {
-        int currenspos = playerPath.GetCurrentWaypoint();
-        CameraWaypoint point = CameraDirection(playerPath.currentPos);
+        point = CameraDirection(playerPath.currentPos);
         if (!player.GetIsPendulum())
         {
             NormalMove(point);
@@ -78,7 +72,6 @@ public class CameraWork : MonoBehaviour
         {
             PendulumLookAtPosition(point);
         }
-
     }
 
     /*! @brief 通常移動*/
@@ -98,9 +91,7 @@ public class CameraWork : MonoBehaviour
 
         newPos = (point.lookAt.position + point.cameraVec * point.dist) + zoom;
         newPos.y += point.offsetY;
-
         target.position = Vector3.Lerp(target.position, newPos, 0.1f);
-
         lookat = point.lookAt.position + point.lookOffset;
         target.LookAt(lookat);
     }
@@ -117,12 +108,14 @@ public class CameraWork : MonoBehaviour
     /*! @brief 振り子状態の時座標*/
     void PendulumLookAtPosition(CameraWaypoint point)
     {
+        if (SceneManager.GetActiveScene().name == "Title") return;　　//タイトルでは移動しない
         Vector3 lookat = Vector3.zero;
         Vector3 zoom = Vector3.zero;
         Vector3 newPos = player.GetFulcrumPosition();
         newPos.y -= player.GetRadius() / 2;
         lookat = newPos;
         newPos +=point.cameraVec*point.dist;
+        
         target.position = Vector3.Lerp(target.position, newPos, 0.05f);
         target.LookAt(lookat);
     }
@@ -143,19 +136,15 @@ public class CameraWork : MonoBehaviour
         }
         return cameraWaypoints[cameraWaypoints.Count - 1];
     }
-    #endregion
 
-#if UNITY_EDITOR
-    public void OnDrawGizmos()
+    /*! @brief 現在のカメラのある方向ベクトル取得*/
+    public Vector3 GetCameraVec()
     {
-        //for (int i = 0; i < cameraWaypoints.Count; i++)
-        //{
-        //    var index = cameraWaypoints[i];
-        //    Gizmos.matrix = Matrix4x4.TRS(index.position, Quaternion.one, Vector3.one);
-        //    Gizmos.color = Color.white;
-        //    Gizmos.DrawFrustum(index.position, 90, 0.25f, 0.01f, 1.78f);
-        //    Gizmos.matrix = Matrix4x4.identity;
-        //}
+        if(point==null)
+        {
+            return Vector3.zero;
+        }
+        return point.cameraVec;
     }
-#endif
+    #endregion
 }

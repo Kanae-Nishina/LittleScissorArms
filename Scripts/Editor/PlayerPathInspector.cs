@@ -12,9 +12,9 @@ using UnityEditor;
 using UnityEditorInternal;
 using System;
 
-/*! @brief プレイヤーパスのエディタ拡張*/
 [CustomEditor(typeof(PlayerPath))]
 [CanEditMultipleObjects]
+/*! @brief プレイヤーパスのエディタ拡張*/
 public class PlayerPathInspector : Editor
 {
     private bool waypointsFoldout = true;      /*! ポイント折りたたみフラグ*/
@@ -230,14 +230,11 @@ public class PlayerPathInspector : Editor
     /*! @brief 文字設定*/
     private void CharacterPreference()
     {
-        //項目の文字太さ
-        //boldFoldoutStyle = new GUIStyle(EditorStyles.foldout);
-        //boldFoldoutStyle.fontStyle = FontStyle.Bold;
         //右ボタンの設定
         rightMiniButton = new GUIStyle(EditorStyles.miniButton);
         rightMiniButton.fixedWidth = 100;
-
-        //
+        
+        //アクションボタンのスタイル設定
         actionButtonStyleLeft = new GUIStyle(EditorStyles.miniButtonLeft);
         if (EditorGUIUtility.isProSkin)
             actionButtonStyleLeft.normal.textColor = Color.yellow;
@@ -364,7 +361,6 @@ public class PlayerPathInspector : Editor
                 }
 
                 EditorGUIUtility.labelWidth = 60;
-                //EditorGUILayout.Separator();
                 EditorGUILayout.PropertyField(waypoints.GetArrayElementAtIndex(currentSelectedWaypoint).FindPropertyRelative("reached"));
                 EditorGUILayout.EndVertical();
             }
@@ -375,7 +371,7 @@ public class PlayerPathInspector : Editor
     /*! @brief ポイントの明確化、追加、削除*/
     private void WaypointAddOrDel()
     {
-        waypointsFoldout = EditorGUILayout.Foldout(waypointsFoldout, "Waypoint " + (currentSelectedWaypoint + 1), true/*boldFoldoutStyle*/);
+        waypointsFoldout = EditorGUILayout.Foldout(waypointsFoldout, "Waypoint " + (currentSelectedWaypoint + 1), true);
         if (GUILayout.Button(new GUIContent("明確化", "選択中のポイントを見やすくします。"), EditorStyles.miniButtonLeft, GUILayout.Width(60)))
         {
             if (SceneView.lastActiveSceneView != null)
@@ -404,7 +400,7 @@ public class PlayerPathInspector : Editor
     /*! @brief イベント*/
     private void EventPreference()
     {
-        eventsFoldout = EditorGUILayout.Foldout(eventsFoldout, "Events", true/*boldFoldoutStyle*/);
+        eventsFoldout = EditorGUILayout.Foldout(eventsFoldout, "Events", true);
         if (eventsFoldout)
         {
             EditorGUILayout.PropertyField(serializedObject.FindProperty("waypointChanged"));
@@ -415,7 +411,7 @@ public class PlayerPathInspector : Editor
     private void Preview()
     {
         EditorGUILayout.BeginHorizontal();
-        previewFoldout = EditorGUILayout.Foldout(previewFoldout, "Preview", true/*boldFoldoutStyle*/);
+        previewFoldout = EditorGUILayout.Foldout(previewFoldout, "Preview", true);
         EditorGUILayout.EndHorizontal();
         if (previewFoldout)
         {
@@ -452,7 +448,7 @@ public class PlayerPathInspector : Editor
     /*! @brief ユーティリティ設定*/
     private void UtilityPreference()
     {
-        utilityFoldout = EditorGUILayout.Foldout(utilityFoldout, "Utility", true/*boldFoldoutStyle*/);
+        utilityFoldout = EditorGUILayout.Foldout(utilityFoldout, "Utility", true);
         if (utilityFoldout)
         {
             EditorGUILayout.BeginVertical("Box");
@@ -552,7 +548,6 @@ public class PlayerPathInspector : Editor
     /*! @brief パス全体のポイントの補間値の計算*/
     private float CalcPosForWaypointIndex(int index)
     {
-        //return (float)index / (float)(serializedObject.FindProperty ("waypoints").arraySize - (((PlayerPath)serializedObject.targetObject).loop ? 0f : 1f));
         return (float)index / (((PlayerPath)target).waypoints.Length - (((PlayerPath)target).loop ? 0f : 1f));
     }
 
@@ -625,9 +620,7 @@ public class PlayerPathInspector : Editor
     /*! @brief ポジションハンドルの作成*/
     private Vector3 PositionHandle(Vector3 position, Quaternion rotation, bool mini)
     {
-        //float handleSize = HandleUtility.GetHandleSize(position) / (mini ? 2f : 1f);
         Color color = Handles.color;
-
         bool xPresent = true;
 
         if (SceneView.sceneViews.Count > 0)
@@ -644,9 +637,9 @@ public class PlayerPathInspector : Editor
         Handles.color = color;
         return position;
     }
-
-    /*! @brief パスオブジェクトの作成*/
+    
     [MenuItem("GameObject/Path/Create new PlayerPath")]
+    /*! @brief パスオブジェクトの作成*/
     public static void CreateNewPlayerPath(MenuCommand menuCommand)
     {
         //オブジェクトの生成

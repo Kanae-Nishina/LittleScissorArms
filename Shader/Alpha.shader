@@ -1,4 +1,11 @@
-﻿Shader "Custom/Alpha" {
+﻿/*!
+* @file Alpha.shader
+* @brief 透過シェーダ
+* @date 2017/05/21
+* @author 仁科香苗
+* @note 参考:Qiita(http://qiita.com/beinteractive/items/fc80a42388581473db4d)
+*/
+Shader "Custom/Alpha" {
 	Properties{
 		_MainTex("Base (RGB)", 2D) = "white" {}
 	}

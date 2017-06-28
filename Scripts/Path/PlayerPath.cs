@@ -21,38 +21,34 @@ using UnityEditor;
 public class PlayerPath : MonoBehaviour
 {
     [Serializable]
-    /*!!ポイント通過時のイベント*/
-    public class WaypointChangedEvent : UnityEvent<int> { }
+    public class WaypointChangedEvent : UnityEvent<int> { }     /*! ポイント通過時のイベント*/
+    public WaypointChangedEvent waypointChanged;                 /*! 最後のポイント通過時のイベント*/
+    private int _lastPassedWayponint;                                                /*! イベント管理の為の最終ポイント*/
 
-    public Color pathColor = Color.white;                                //Editor上のパスカラー
-    public Waypoint[] waypoints = new Waypoint[] { };       //パスを定義するポイント
-    public Transform target;                                                        //パスに沿わせる対象のトランスフォーム
-
-    public bool loop = false;                                                           //パスをループさせるかどうか
-    public bool updateTransform = true;                                    //アニメーション中の変換の更新フラグ
-    private int _lastPassedWayponint;                                   //イベント管理の為の最終ポイント
-
-    public float speed = 0.1f;                                                      //移動スピード
-    public float globalFollowPathBias = 0.001f;                     //パスに沿う移動の偏り(0の方が高い)
-    public float velocityBias = .1f;                                                //移動速度の偏り補正
-    public float currentPos;                                                          //現在の補間位置(0~1)
-    public float currentNextPos = 0f;                                        //次の補間位置
-    public float totalDistance = 0;                                             //総距離
-    private float _lastVelocity = 1.0f;                                         //最後のアニメーション速度のキャッシュ
-    public WaypointChangedEvent waypointChanged;    //最後のポイント通過時のイベント
-
+    public Color pathColor = Color.white;                                          /*! Editor上のパスカラー*/
+    public Waypoint[] waypoints = new Waypoint[] { };                /*! パスを定義するポイント*/
+    public Transform target;                                                                   /*! パスに沿わせる対象のトランスフォーム*/
+    public bool loop = false;                                                                    /*! パスをループさせるかどうか*/
+    public bool updateTransform = true;                                            /*! 更新フラグ*/
+    public float speed = 0.1f;                                                                   /*! 移動スピード*/
+    private const float velocityBias = 0.1f;                                          /*! 移動速度の偏り補正*/
+    public float currentPos;                                                                     /*! 現在の補間位置(0~1)*/
+    public float currentNextPos = 0f;                                                   /*! 次の補間位置*/
+    public float totalDistance = 0;                                                         /*! 総距離*/
+    private float _lastVelocity = 1.0f;                                                    /*! 最後のアニメーション速度のキャッシュ*/
+                
     //サンプリング。数が多いほど精度が高くなる代わりに、パフォーマンスに影響がある。
-    public int samplesNum = 100;                                            //等速移動の為のサンプリング精度(値が高いほど精度は高い)
-    public int[] waypointSamples = null;                               //サンプリングにおけるポイント
-    public float[] velocitySamples = null;                              //サンプリング移動速度
-    public float[] samplesDistances = null;                           //サンプリングにおけるポイント間の距離
-    public Vector3[] positionSamples = null;                        //サンプリング座標。
-    public Quaternion[] rotationSamples = null;                 //サンプリングの回転
-    private float maxSampleDistance=0f;
+    public int samplesNum = 100;                                                         /* 等速移動の為のサンプリング精度(値が高いほど精度は高い)*/
+    public int[] waypointSamples = null;                                            /*! サンプリングにおけるポイント*/
+    public float[] velocitySamples = null;                                           /*! サンプリング移動速度*/
+    public float[] samplesDistances = null;                                        /*! サンプリングにおけるポイント間の距離*/
+    public Vector3[] positionSamples = null;                                     /*! サンプリング座標*/
+    public Quaternion[] rotationSamples = null;                              /*! サンプリングの回転*/
+    private float maxSampleDistance=0f;                                          /*! 最大サンプリング間の距離*/
 
-    private float inputX = 0;               //スティック入力
-    private float moveMag = 0f;        //移動の大きさ
-    private Vector3 addPosition;        //加算される方向ベクトル
+    private float inputX = 0;                 /*! スティック入力*/
+    private float moveMag = 0f;         /*! 移動の大きさ*/
+    private Vector3 addPosition;        /*! 加算される方向ベクトル*/
 
     /*! @brief アクティブ時の初期化*/
     void OnEnable()
@@ -172,9 +168,8 @@ public class PlayerPath : MonoBehaviour
         UpdateTarget();
         target.position = new Vector3(0f, height, 0f);
     }
-
+    
     #region     更新関係
-
     /*! @brief パスに沿う対象の更新*/
     public void UpdateTarget(Vector3 position, float vel)
     {
@@ -201,7 +196,6 @@ public class PlayerPath : MonoBehaviour
             {
                 addPosition = Vector3.zero;
             }
-
         }
     }
 
@@ -322,11 +316,8 @@ public class PlayerPath : MonoBehaviour
 
             if (maxSampleDistance <= samplesDistances[i])
                 maxSampleDistance = samplesDistances[i];
-
-            // increment total distance;
+            
             totalDistance += samplesDistances[i];
-
-            // increment pos
             curPos += (1f / ((float)samplesNum - 1));
         }
         positionSamples[samplesNum - 1] = computePositionAtPos(loop ? 0f : 1f);
@@ -334,8 +325,6 @@ public class PlayerPath : MonoBehaviour
         waypointSamples[samplesNum - 1] = GetWaypointFromPos(loop ? 0f : 1f);
 
         samplesDistances[samplesNum - 1] = Vector3.Distance(positionSamples[samplesNum - 1], positionSamples[samplesNum - 2]);
-
-        // increment total distance;
         totalDistance += samplesDistances[samplesNum - 1];
     }
 
@@ -355,40 +344,7 @@ public class PlayerPath : MonoBehaviour
         return wp;
     }
 
-    /*! @brief 座標から最も近いポイント位置を取得*/
-    public float GetCurrentPosFromPosition(Vector3 pos)
-    {
-        //Y軸は考慮しない
-        Vector3 nowPos = transform.InverseTransformPoint(pos);
-        nowPos.y = 0f;
-        float dist = 0f;
-        for (int i = 1; i < samplesNum; i++)
-        {
-            dist += samplesDistances[i-1];
-            Vector3 preDist = nowPos - positionSamples[i - 1];
-            preDist.y = 0f;
-            float pre_now = Vector3.Magnitude(preDist);
-            Vector3 aftDist = nowPos - positionSamples[i];
-            aftDist.y = 0f;
-            float aft_now = Vector3.Magnitude(aftDist);
-            if (pre_now< maxSampleDistance && aft_now< maxSampleDistance)
-            {
-                // float refDistance = pos * totalDistance;
-
-                /*
-                 * float interpFactor = 1f - (d - refDistance) / samplesDistances[i];
-                position = Vector3.Lerp(positionSamples[i - 1], positionSamples[i], interpFactor);
-                 */
-
-                return dist / totalDistance;
-            }
-        }
-
-        return 0;
-    }
-
     #region 計算
-
     /*! @brief 特定位置での座標計算*/
     public Vector3 computePositionAtPos(float pos)
     {
@@ -400,7 +356,6 @@ public class PlayerPath : MonoBehaviour
             return waypoints[0].position;
         else
         {
-
             if (pos >= 1)
             {
                 if (loop)
@@ -476,17 +431,13 @@ public class PlayerPath : MonoBehaviour
                 stepPos);
         }
     }
-
     #endregion
-
-    #region  get/set関数
-
+    
     /*! @brief イベント管理の為の最終ポイントの取得*/
     public int LastPassedWayponint
     {
         get { return _lastPassedWayponint; }
     }
-    #endregion
 
 #if UNITY_EDITOR
     /*! @brief エディタ上にパスの描画*/
@@ -499,7 +450,6 @@ public class PlayerPath : MonoBehaviour
 
             for (int i = 0; i < waypoints.Length; i++)
             {
-
                 if (i > 0)
                 {
                     Handles.DrawBezier(
@@ -525,14 +475,8 @@ public class PlayerPath : MonoBehaviour
                     }
                 }
             }
-
-            //// Selection button
-            //if (waypoints.Length > 0)
-            //{
-            //    Gizmos.DrawIcon(transform.TransformPoint(Waypoints[0].position), "path.png", true);
-            //}
-
-            Handles.matrix = mat;  // Thanks to Leon
+            
+            Handles.matrix = mat;
         }
     }
 #endif

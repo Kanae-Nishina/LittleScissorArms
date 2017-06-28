@@ -1,23 +1,25 @@
 ﻿/*!
  * @file WaterHeight.cs
- * @brief 水面の高さ取得クラス
+ * @brief 水面の高さに合わせ動かすクラス
  * @date 2017/05/19
  * @author  仁科香苗
+ * @note 参考:Qiita(http://qiita.com/ELIXIR/items/4b07a4ef844cbe0efd68)
  */
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/*! @brief 水面の高さに合わせ動かすクラス*/
 public class WaterHeight : MonoBehaviour
 {
-    public float mag = 0.03f;   //浮き沈みの大きさ
-    public float diff = 0.2f;        //差分
+    public float mag = 0.03f;   /*! 浮き沈みの大きさ*/
+    public float diff = 0.2f;        /*! 差分*/
 
     [SerializeField]
-    MeshRenderer targetMr;      //水面のメッシュレンダラ
-    Material mat;                            //水面のマテリアル情報
-    List<Transform> childObj;    //浮き沈みする対象オブジェクト(子オブジェクト) 
-    List<Vector3> childStartPos;
+    private MeshRenderer targetMr=null;      /*! 水のメッシュレンダラ*/
+    private Material mat;                                      /*! 水面のマテリアル情報*/
+    private List<Transform> childObj;              /*! 浮き沈みする対象オブジェクト(子オブジェクト) */
+    private List<Vector3> childStartPos;         /*! 動かす子オブジェクトの初期座標*/
 
     /*! @brief 初期化*/
     void Start()
@@ -35,7 +37,6 @@ public class WaterHeight : MonoBehaviour
     /*! @brief 更新*/
     void Update()
     {
-
         Vector2 xzVtx = new Vector2(transform.position.x, transform.position.z);
         Vector4 steepness = mat.GetVector("_GSteepness");
         Vector4 amp = mat.GetVector("_GAmplitude");
@@ -46,8 +47,6 @@ public class WaterHeight : MonoBehaviour
         for (int i = 0; i < childObj.Count; i++)
         {
             Vector3 ofs = GerstnerOffset4(i,xzVtx, steepness, amp, freq, speed, dirAB, dirCD);
-            //transform.GetChild(0).localPosition = ofs * 0.5f;
-
             childObj[i].transform.localPosition = childStartPos[i] + ofs * mag;
         }
     }
@@ -59,33 +58,32 @@ public class WaterHeight : MonoBehaviour
         Vector4 _Time = new Vector4(t / 20, t, t * 2, t * 3);
         Vector3 offsets;
 
-        Vector4 AB = Vector4.Scale(Vector4.Scale(xxyy(steepness), xxyy(amp)), dirAB); //steepness.xxyy * amp.xxyy * dirAB.xyzw;
-        Vector4 CD = Vector4.Scale(Vector4.Scale(zzww(steepness), zzww(amp)), dirCD); //steepness.zzww * amp.zzww * dirCD.xyzw;
+        Vector4 AB = Vector4.Scale(Vector4.Scale(xxyy(steepness), xxyy(amp)), dirAB);
+        Vector4 CD = Vector4.Scale(Vector4.Scale(zzww(steepness), zzww(amp)), dirCD);
 
         Vector4 dotABCD = Vector4.Scale(freq, new Vector4(
             Vector2.Dot(new Vector2(dirAB.x, dirAB.y), xzVtx),
             Vector2.Dot(new Vector2(dirAB.z, dirAB.w), xzVtx),
             Vector2.Dot(new Vector2(dirCD.x, dirCD.y), xzVtx),
-            Vector2.Dot(new Vector2(dirCD.z, dirCD.w), xzVtx)
-        )); //freq.xyzw * half4(dot(dirAB.xy, xzVtx), dot(dirAB.zw, xzVtx), dot(dirCD.xy, xzVtx), dot(dirCD.zw, xzVtx));
-        Vector4 TIME = Vector4.Scale(Vector4.one * _Time.y, speed); //_Time.yyyy * speed;
+            Vector2.Dot(new Vector2(dirCD.z, dirCD.w), xzVtx)));
+        Vector4 TIME = Vector4.Scale(Vector4.one * _Time.y, speed);
 
         Vector4 COS = new Vector4(
             Mathf.Cos(dotABCD.x + TIME.x),
             Mathf.Cos(dotABCD.y + TIME.y),
             Mathf.Cos(dotABCD.z + TIME.z),
             Mathf.Cos(dotABCD.w + TIME.w)
-        ); //cos (dotABCD + TIME);
+        );
         Vector4 SIN = new Vector4(
             Mathf.Sin(dotABCD.x + TIME.x),
             Mathf.Sin(dotABCD.y + TIME.y),
             Mathf.Sin(dotABCD.z + TIME.z),
             Mathf.Sin(dotABCD.w + TIME.w)
-        ); //sin (dotABCD + TIME);
+        );
 
-        offsets.z = Vector4.Dot(COS, new Vector4(AB.x, AB.z, CD.x, CD.z)); // dot(COS, Vector4(AB.xz, CD.xz));
-        offsets.x = Vector4.Dot(COS, new Vector4(AB.y, AB.w, CD.y, CD.w)); // dot(COS, Vector4(AB.yw, CD.yw));
-        offsets.y = Vector4.Dot(SIN, amp); // dot(SIN, amp);
+        offsets.z = Vector4.Dot(COS, new Vector4(AB.x, AB.z, CD.x, CD.z));
+        offsets.x = Vector4.Dot(COS, new Vector4(AB.y, AB.w, CD.y, CD.w));
+        offsets.y = Vector4.Dot(SIN, amp);
 
         return offsets;
     }

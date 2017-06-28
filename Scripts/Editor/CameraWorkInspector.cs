@@ -11,9 +11,9 @@ using UnityEditor;
 using UnityEditorInternal;
 using System;
 
-/*! @brief カメラワークのエディタ拡張*/
 [CustomEditor(typeof(CameraWork))]
 [CanEditMultipleObjects]
+/*! @brief カメラワークのエディタ拡張*/
 public class CameraWorkInspector : Editor
 {
     SerializedProperty cameraWayPoint;             /*! カメラのポイント*/
@@ -58,8 +58,8 @@ public class CameraWorkInspector : Editor
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("target"), new GUIContent("カメラ"));
             }
             EditorGUILayout.PropertyField(serializedObject.FindProperty("player"), new GUIContent("プレイヤー"));
-            EditorGUILayout.Slider(serializedObject.FindProperty("zoomOutDist"), 1f, 10f, new GUIContent("ズームアウトでの加算値"));
-            EditorGUILayout.EndVertical(); //Box
+            EditorGUILayout.Slider(serializedObject.FindProperty("zoomOutDist"), 0f, 10f, new GUIContent("ズームアウトでの加算値"));
+            EditorGUILayout.EndVertical();
         }
         EditorGUILayout.Separator();
     }
@@ -128,9 +128,7 @@ public class CameraWorkInspector : Editor
         if (isWaypointFoldout)
         {
             EditorGUILayout.BeginVertical("Box"); //Box1
-            //ポイントが無かったら情報をセットしない
             int size = cameraWayPoint.arraySize;
-            if (size == 0) return;
 
             EditorGUILayout.BeginVertical(GUI.skin.box); //skinBox
             scrollSize = EditorGUILayout.IntSlider("スクロールサイズ", scrollSize, 100, 500);

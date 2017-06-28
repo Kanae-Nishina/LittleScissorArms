@@ -7,42 +7,44 @@
 using System.Collections;
 using UnityEngine;
 
+/*! @brief 入力管理クラス*/
 namespace InputGamePad
 {
     public static class GamePad
     {
-        public enum Button { A, B, Start, Dash, Jump, Decide, Cancel }                          //ボタン
-        public enum Trigger { LeftTrigger, RightTrigger, L_Scissors, R_Scissors }     //トリガー
-        public enum Stick { AxisX, AxisY }    //スティック
-        private static Vector2 preLeftStick = Vector2.zero;
-        private const float stickMiddle = 0.5f;
+        public enum Button { A, B, Start, Dash, Jump, Decide, Cancel }                          /*! ボタン*/
+        public enum Trigger { LeftTrigger, RightTrigger, L_Scissors, R_Scissors }     /*! トリガー*/
+        public enum Stick { AxisX, AxisY }    /*! スティック*/
+        private static Vector2 preLeftStick = Vector2.zero; /*! 左スティックの前回の入力値*/
+        private const float stickMiddle = 0.5f; /*! スティック入力値の中間値*/
 
-        //ボタンを押した瞬間
+        /*! @brief ボタンを押した瞬間*/
         public static bool GetButtonDown(Button button)
         {
             KeyCode code = GetKeyCode(button);
             return Input.GetKeyDown(code);
         }
 
-        //ボタンを離した瞬間
+        /*! @brief ボタンを離した瞬間*/
         public static bool GetButtonUp(Button button)
         {
             KeyCode code = GetKeyCode(button);
             return Input.GetKeyUp(code);
         }
 
-        //ボタンを押している間
+        /*! @brief ボタンを押している間*/
         public static bool GetButton(Button button)
         {
             KeyCode code = GetKeyCode(button);
             return Input.GetKey(code);
         }
 
-        //左スティックの入力状態
+        /*! @brief 左スティックの入力状態*/
         public static Vector2 GetLeftStickAxis(bool raw)
         {
             Vector2 axis = Vector3.zero;
 
+            //キーボード操作用(デバッグ用)
             if (Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.RightArrow)
                 || Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.DownArrow))
             {
@@ -73,7 +75,7 @@ namespace InputGamePad
             return axis;
         }
 
-        //左スティックを入力した瞬間
+        /*! @brief 左スティックを入力した瞬間*/
         public static float GetLeftStickAxis(bool raw, Stick axis)
         {
             Vector2 now = GetLeftStickAxis(raw);
@@ -99,12 +101,12 @@ namespace InputGamePad
 
             return 0f;
         }
-
-
-        //トリガー入力状態
+        
+        /*! @briefトリガー入力状態*/
         public static float GetTrigger(Trigger trigger, bool raw)
         {
             string name = "";
+            //キーボード操作用(デバッグ用)
             if (trigger == Trigger.LeftTrigger || trigger == Trigger.L_Scissors)
             {
                 if (Input.GetKey(KeyCode.Q))
@@ -142,7 +144,7 @@ namespace InputGamePad
             return axis;
         }
 
-        //ゲームパッドの押下状態
+        /*! @brief ゲームパッドの押下状態*/
         public static GamePadState GetState(bool raw)
         {
             GamePadState state = new GamePadState();
@@ -162,7 +164,7 @@ namespace InputGamePad
             return state;
         }
 
-        //入力したキーを返す
+        /*! @brief 入力したキーを返す*/
         static KeyCode GetKeyCode(Button button)
         {
             switch (button)
@@ -170,10 +172,17 @@ namespace InputGamePad
                 case Button.A: return KeyCode.Joystick1Button0;
                 case Button.B: return KeyCode.Joystick1Button1;
                 case Button.Start: return KeyCode.Joystick1Button7;
-
-                case Button.Dash: return KeyCode.Joystick1Button1;
+                case Button.Dash:
+                    if (Input.GetKey(KeyCode.B))//キーボード操作用(デバッグ用)
+                    {
+                        return KeyCode.B;
+                    }
+                    else
+                    {
+                        return KeyCode.Joystick1Button1;
+                    }
                 case Button.Jump:
-                    if (Input.GetKeyDown(KeyCode.Space))
+                    if (Input.GetKeyDown(KeyCode.Space))//キーボード操作用(デバッグ用)
                     {
                         return KeyCode.Space;
                     }
@@ -188,7 +197,7 @@ namespace InputGamePad
         }
     }
 
-    //ゲームパッドの状態
+    /*! @brief ゲームパッドの状態*/
     public class GamePadState
     {
         public bool A = false;

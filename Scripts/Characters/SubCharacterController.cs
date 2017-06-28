@@ -10,78 +10,61 @@ using System.Collections.Generic;
 using UnityEngine;
 using InputGamePad;
 
+/*! @brief サブキャラクター管理クラス*/
 public class SubCharacterController : MonoBehaviour
 {
-    /*!public宣言*/
-    public float jumpPower = 0f;                      //ジャンプ力
-    public Transform partnerPos;                     //他プレイヤーの位置
-    public Collider partnerCol;                         //他プレイヤーの当たり判定
-    public Rigidbody partnerRig;                     //他プレイヤーの当たり判定
-    public Animator animator;
-    public float subPlayerStopPos = 0f;             //サブキャラが止まる距離
-    public float subPlayerDistance = 0f;            //サブキャラの近づく距離
-    public static Collider subScissor;
-    public Camera camera;                               //カメラ
-    public MainCharacterController player;
+    public float jumpPower = 0f;                         /*! ジャンプ力*/
+    public float beThrownPower;                       /*! 投げられる力*/
+    public Transform partnerPos;                       /*! 他プレイヤーの位置*/
+    public Rigidbody partnerRig;                        /*! 他プレイヤーの当たり判定*/
+    public Animator animator;                             /*! アニメーター*/
+    public float subPlayerStopPos = 0f;             /*! サブキャラが止まる距離*/
+    public float subPlayerDistance = 0f;            /*! サブキャラの近づく距離*/
+    public static Collider subScissor;                   /*! 挟むよう当たり判定*/
+    public Camera mainCamera;                           /*! カメラ*/
+    public CameraWork camerawork;                 /*! カメラワーク管理クラス*/
+    public MainCharacterController player;      /*! メインキャラクター管理クラス*/
+    public Transform mainLeftHand;                  /*! メインキャラクターの左手*/
+    public Transform mainRightHand;               /*! メインキャラクターの右手*/
+    public float lookAngle = 0f;                            /*! サブキャラの向く角度*/
+    
+    private GameObject nearGimmick = null;  /*! ギミック*/
+    private float Ltrg;                                              /*! 左トリガー*/
+    private Vector3 nearGimmickPos;                /*! 最も近いギミックの座標*/
+    private Vector3 throwAngle;                         /*! メインプレイヤーとカーソルの角度*/
+    private Rigidbody rigidBody;                         /*! リジッドボディ*/
+    private Vector3 rot;                                          /*! 向いている方向*/
+    private GameObject cursor;                          /*! カーソル取得*/
 
-    /*!private宣言*/
-    private GameObject nearGimmick = null;          //ギミック
-    private bool isAbleJump = true;                        //ジャンプ可能フラグ
-    private float Ltrg;
-    private Vector3 nearGimmickPos;                     //最も近いギミックの座標
-    private Vector3 throwAngle;                            //メインプレイヤーとカーソルの角度
-    private Rigidbody rigidBody;
-    private bool isSubPlayerCarry = false;              //サブプレイヤー運んでいるか
-
-    #region 仁科追記
-    //振子運動関係=======
-    public float windUpPower;                                   //巻き上げる力
-    private float radius;                                                   //半径
-    [Range(0f, 5f)] public float minRadius;              //半径最小値
-    private float maxRadius;                                          //半径最大値
-    [Range(0f, 1f)] public float acceleration;            //加速力
-    private float addAccele;                                            //角度加算値
-    [Range(0f, 10f)] public float firstAcceleSpeed;      //初速保存
-    private float accelSpeed;                                               //速度
-    [Range(0f, 1f)] public float gravityAccele;                 //重力加速度
-    private bool isPendulum = false;                                //振り子フラグ
-    private float swingAngle;                                           //振り幅
-    private bool pendulumDirX = false;                                          //振り子の方向
-    private Vector3 prePosition = Vector3.zero;           //前フレームの加算値
-    //=======
-    //=======
-    public PlayerPath playerPath;
-    public float distance = 0.01f;
-    //=======
-    #endregion
-
-    private enum State
+    private enum State         /*! サブキャラクターの状態*/
     {
-        eFollow,            //ついていく
-        eFastMove,
-        // イベントステート
-        eScissors,          //鋏む
-        eHung,              //ぶら下がり
-        eAim,                //狙う
+        eFollow,                          //ついていく
+        eFastMove,                    //メインキャラクターの元へ瞬時に移動
+        eBeCarried,　                //運ばれる
+        eBeThrown,　         　//投げられる
+        eScissors,                       //鋏む
+        eHung,                            //ぶら下がり
+        eAim,                               //狙う
     }
-    State state;
+    private State state;         /*! サブキャラクターの状態*/
 
     /*! @brief   初期化*/
     void Start()
     {
+        cursor = GameObject.Find("cursor");
         rigidBody = GetComponent<Rigidbody>();
-        partnerCol.GetComponent<Collider>();
+        rot.y = partnerPos.transform.eulerAngles.y + lookAngle;
+        transform.localRotation = Quaternion.Euler(rot);
 
         state = State.eFollow;
         animator = GetComponent<Animator>();
         partnerPos = GameObject.FindGameObjectWithTag("Player").transform;
-        camera.depthTextureMode = DepthTextureMode.Depth;
+        mainCamera.depthTextureMode = DepthTextureMode.Depth;
     }
 
     /*! @brief   物理演算系更新*/
     private void FixedUpdate()
     {
-        //Action();
         Move();
     }
 
@@ -98,11 +81,16 @@ public class SubCharacterController : MonoBehaviour
             case State.eFastMove:
                 FastMove();
                 break;
+            case State.eBeCarried:
+                CarryByMainPlayer();
+                break;
+            case State.eBeThrown:
+                BeThrown();
+                break;
             case State.eHung:
                 HungingMove();
                 break;
         }
-
     }
 
     /*! @brief プレイヤーの元へ高速移動*/
@@ -120,11 +108,13 @@ public class SubCharacterController : MonoBehaviour
     /*! @brief   サブキャラクターの移動*/
     void FollowMove()
     {
-#if true
         Vector3 mainPlayerPos = partnerPos.position;
         Vector3 Direction = mainPlayerPos - transform.position;
         float Distance = Direction.sqrMagnitude;
         Direction.y = 0f;
+
+        //回転
+        FollowRotation();
 
         //メインプレイヤーのキャラが一定以上でなければ、サブキャラは近寄らない
         if (Distance >= subPlayerDistance + subPlayerStopPos)
@@ -137,10 +127,6 @@ public class SubCharacterController : MonoBehaviour
             transform.position = Vector3.SmoothDamp(transform.position, targetPos, ref velocity, 0.2f);
             animator.SetBool("isWalk", true);
         }
-        //else if (Distance > subPlayerDistance + subPlayerStopPos)
-        //{
-        //    //Jump(); // あぁ^～心がぴょんぴょんするんじゃぁ^～
-        //}
         else
         {
             animator.SetBool("isWalk", false);
@@ -150,168 +136,86 @@ public class SubCharacterController : MonoBehaviour
         {
             state = State.eFastMove;
         }
+    }
 
-        if (player.isSublayerCarry)
+    /*! @brief 通常移動の向き*/
+    void FollowRotation()
+    {
+        Vector3 lookatPos = partnerPos.position + camerawork.GetCameraVec();
+        lookatPos.y = transform.position.y;
+        transform.LookAt(lookatPos);
+    }
+
+    /*! @brief サブプレイヤーのステートを運ばれるに変更*/
+    public void SetStateBeCarried()
+    {
+        state = State.eBeCarried;
+    }
+
+    /*! @brief メインプレイヤーに運ばれる*/
+    void CarryByMainPlayer()
+    {
+        rigidBody.velocity = Vector3.zero;
+
+        //位置
+        Vector3 pos = (mainLeftHand.position + mainRightHand.position) / 2;
+        transform.position = pos;
+
+        //回転
+        rot = transform.localEulerAngles;
+        if (MainCharacterController.isLookFront)
         {
-            animator.SetBool("isScissorUp", true);
+            rot.y = partnerPos.transform.eulerAngles.y + lookAngle;
         }
         else
         {
-            animator.SetBool("isScissorUp", false);
+            rot.y = partnerPos.transform.eulerAngles.y - lookAngle;
         }
+        transform.localRotation = Quaternion.Euler(rot);
 
-#else
+        animator.SetBool("isScissorUp", true);
+        
+        rigidBody.useGravity = !player.isSublayerCarry;
+        if (!player.isSublayerCarry)
+        {
+            state = State.eBeThrown;
+        }
+    }
 
-        float pos = playerPath.GetCurrentPosFromPosition(transform.position);
-        transform.position += playerPath.GetSampledPositionFromPos(pos,transform.position);
-#endif
+    /*! @brief 投げられる*/
+    void BeThrown()
+    {
+        throwAngle = cursor.GetComponent<CursorMove>().throwPos- transform.position;
+        rigidBody.AddForce(throwAngle * beThrownPower);
+        state = State.eFollow;
     }
 
     /*! @brief ぶら下がりにおける移動*/
     void HungingMove()
     {
-        // オブジェクトをはさむ
-        //if (isSubPlayerCarry)
-        //{
+        if (Ltrg < 0.2 && nearGimmick != null)
+        {
+            MainCharacterController.isSubScissor = false;
+            nearGimmick = null;
+            state = State.eFollow;
+            return;
+        }
+
         rigidBody.velocity = Vector3.zero;
-        transform.position = nearGimmickPos;
-        //}
+        Vector3 pos = nearGimmickPos;
+        pos.y -= (transform.localScale.y + nearGimmick.transform.localScale.y);
+        transform.position = pos;
+        Vector3 lookat = transform.position + camerawork.GetCameraVec();
+        transform.LookAt(lookat);
     }
-
-    #region 振子
-    /*! @brief 振子運動の設定 */
-    void PendulumSetting()
-    {
-        float pos = playerPath.GetCurrentPosFromPosition(transform.position);
-        transform.position += playerPath.GetSampledPositionFromPos(pos, transform.position);
-        radius = Vector3.Distance(transform.position, partnerPos.position);
-        maxRadius = radius;
-        Vector3 targetDir = transform.position - partnerPos.position;
-        pendulumDirX = (targetDir.x <= targetDir.z) ? true : false;
-        Vector3 right = (partnerPos.position + Vector3.right) - partnerPos.position;
-        swingAngle = Vector3.Angle(targetDir, right);
-        addAccele = 0;
-        accelSpeed = firstAcceleSpeed;
-        rigidBody.useGravity = false;
-        partnerRig.useGravity = false;
-        partnerRig.isKinematic = true;
-    }
-
-    /*! @brief 巻き上げ*/
-    void Hoisting()
-    {
-        radius -= windUpPower * GamePad.GetLeftStickAxis(true).y;
-        if (radius <= minRadius)
-        {
-            radius = minRadius;
-        }
-        else if (radius >= maxRadius)
-        {
-            radius = maxRadius;
-        }
-    }
-
-    /*! @brief 振り子の加速*/
-    void PendulumAcceleration()
-    {
-        addAccele -= acceleration * GamePad.GetLeftStickAxis(true, GamePad.Stick.AxisX);
-        const float maxAddAngle = 3f;
-        const float minAddAngle = -3f;
-        if (addAccele >= maxAddAngle)
-        {
-            addAccele = maxAddAngle;
-        }
-        else if (addAccele <= minAddAngle)
-        {
-            addAccele = minAddAngle;
-        }
-    }
-
-    /*! @brief 振子状態における移動*/
-    void Pendulum()
-    {
-        //巻き上げ
-        Hoisting();
-        //振り子の加速
-        PendulumAcceleration();
-        //支点
-        Vector3 fulcrum = partnerPos.position;
-        fulcrum.y *= -1f;
-
-        //現在の位置
-        var rad = swingAngle * Mathf.Deg2Rad;
-        var preRad = rad;
-        var px = fulcrum.x + Mathf.Cos(rad) * radius;
-        var py = fulcrum.y + Mathf.Sin(rad) * radius;
-        var pz = fulcrum.z + Mathf.Cos(rad) * radius;
-
-        //重力移動量を反映した位置
-        var vx = px - fulcrum.x;
-        var vy = py - fulcrum.y;
-        var vz = pz - fulcrum.z;
-        var t = -(vy * gravityAccele) / (vx * vx + vy * vy);
-        var gx = px + t * vx;
-        var gy = py + gravityAccele + t * vy;
-        var gz = pz + t * vz;
-
-        //2つの位置の角度差
-        var rx = Mathf.Atan2(gy - fulcrum.y, gx - fulcrum.x) * Mathf.Rad2Deg;
-        var rz = Mathf.Atan2(gy - fulcrum.y, gz - fulcrum.z) * Mathf.Rad2Deg;
-
-        //角度差を角速度に加算
-        const float fullAngle = 360f;
-        const float halfAngle = 180f;
-        var sub = rx - swingAngle;
-        {
-            sub -= Mathf.Floor(sub / fullAngle) * fullAngle;
-            if (sub <= halfAngle)
-                sub += fullAngle;
-            if (sub > halfAngle)
-                sub -= fullAngle;
-            accelSpeed += sub;
-        }
-        var subZ = rz - swingAngle;
-        {
-            subZ -= Mathf.Floor(subZ / fullAngle) * fullAngle;
-            if (subZ <= halfAngle)
-                subZ += fullAngle;
-            if (subZ > halfAngle)
-                subZ -= fullAngle;
-            //accelSpeed += subZ;
-        }
-        //角度に角加算と加速力を加算
-        swingAngle += accelSpeed + addAccele;
-        //新しい位置
-        rad = swingAngle * Mathf.Deg2Rad;
-        px = fulcrum.x + Mathf.Cos(rad) * radius;
-        py = (fulcrum.y + Mathf.Sin(rad) * radius) * -1f;
-        pz = fulcrum.z + Mathf.Cos(rad) * radius;
-
-        //高さは振子運動を使用
-        Vector3 tempPos = transform.position;
-        tempPos.y = py;
-        transform.position = tempPos;
-
-        //水平軸はパスに添わせる
-        Vector3 vec = new Vector3(px, 0f, pz) - transform.position;
-        float diff = (pendulumDirX) ? vec.x : vec.z;
-        //playerPath.SetInput(1, diff * pendulumMag);
-    }
-    #endregion
-
-    /*! @brief   ジャンプ*/
-    void Jump()
-    {
-        rigidBody.AddForce(Vector3.up * jumpPower);
-        isAbleJump = false;
-    }
-
+    
     /*! @brief 衝突した瞬間検知*/
     void ChildOnTriggerEnter(Collider col)
     {
+        animator.SetBool("isScissorUp", false);
     }
 
-    /*! @brief   プレイヤーが衝突している*/
+    /*! @brief   衝突の継続を検知*/
     void ChildOnTriggerStay(Collider col)
     {
         subScissor = col;
@@ -319,38 +223,20 @@ public class SubCharacterController : MonoBehaviour
         if (state != State.eHung && col.transform.tag == "Hook" && Ltrg > 0.2)
         {
             nearGimmick = subScissor.gameObject;
-            nearGimmickPos = transform.position;
+            nearGimmickPos = nearGimmick.transform.position;
             state = State.eHung;
         }
         else if (state != State.eHung && col.transform.tag == "Goal" && Ltrg > 0.2)
         {
             nearGimmick = subScissor.gameObject;
             nearGimmickPos = transform.position;
-            state = State.eHung;
-            camera.depth = -5; // ゴールのカメラに切り替え
-        }
-        //ギミックを離す
-        else if (Ltrg < 0.2 && nearGimmick != null)
-        {
-            MainCharacterController.isSubScissor = false;
-            //isSubPlayerCarry = false;
-            //nearGimmickPos = transform.position * -2f;
-            nearGimmick = null;
-            state = State.eFollow;
-            //Destroy(gameObject.AddComponent<FixedJoint>())
-
             
+            state = State.eHung;
+            mainCamera.depth = -5; // ゴールのカメラに切り替え
+            GameObject.Find("SceneManager").GetComponent<SceneControl>().AddClearScene();
         }
     }
 
-    /*! @brief   Clip部分が衝突していない*/
-    void ChildOnTriggerExit(Collider col)
-    {
-        //触れていたオブジェクトがギミックの時
-        if (col.transform.tag == "SubPlayer")
-        {
-            //Debug.Log("離れた");
-        }
-    }
-
+    /*! @brief 衝突から離れたのを検知*/
+    void ChildOnTriggerExit(Collider col) { }
 }

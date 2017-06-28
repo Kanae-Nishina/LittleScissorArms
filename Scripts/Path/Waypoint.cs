@@ -15,38 +15,30 @@ using System;
 public class Waypoint
 {
     [Serializable]
-    //ポイント到達時のイベント
-    public class ReachedEvent : UnityEvent { }
-
-    //速度変化の際の補間タイプ
-    public enum VelocityVariation
+    public class ReachedEvent : UnityEvent { }   /*! イベント*/
+    public ReachedEvent reached;                         /*! ポイント到達時のイベント*/
+    public enum VelocityVariation                          /*! 速度変化の際の補間タイプ*/
     {
         Slow,
         Medium,
         Fast
     }
-    public bool inspectorView = false;                   //インスペクターに描画するかどうか
-    public float offsetY = 0f;                                   //Y軸移動のオフセット
-    public float dist = 17.5f;                                     //距離
-    public Vector3 lookOffset;                              //注視のオフセット
-    public Vector3 cameraVec;                               //カメラのある方向
-    public Transform lookAt;                                //そのポイントにおける注視点
+    public VelocityVariation inVariation;               /*! 入りの速度のタイプ*/
+    public VelocityVariation outVariation;            /*! 出る時の速度タイプ*/
+    public bool inspectorView = false;                   /*! インスペクターに描画するかどうか*/
+    public float offsetY = 0f;                                      /*! Y軸移動のオフセット*/
+    public float dist = 17.5f;                                        /*! 距離*/
+    public Vector3 lookOffset;                                  /*! 注視のオフセット*/
+    public Vector3 cameraVec;                                 /*! カメラのある方向*/
+    public Transform lookAt;                                    /*! そのポイントにおける注視点*/
+    public Vector3 position;                                      /*! ポイント座標*/
+    public Vector3 rotation;                                      /*! オイラー角での回転*/
+    public Vector3 inTangent;                                  /*! 入力ベジェの接線*/
+    public Vector3 outTangent;                               /*! 出力ベジェの接線*/
+    public bool symmetricTangents;                      /*! 入出力ベジェの接線の対称フラグ*/
+    public float velocity;                                             /*! 速度*/
 
-
-    public Vector3 position;                                  //ポイント座標
-    public Vector3 rotation;                                  //オイラー角での回転
-
-    public Vector3 inTangent;                               //入力ベジェの接線
-    public Vector3 outTangent;                           //出力ベジェの接線
-    public bool symmetricTangents;                  //入出力ベジェの接線の対称フラグ
-
-    public float velocity;                                         //速度
-    public VelocityVariation inVariation;            //入りの速度のタイプ
-    public VelocityVariation outVariation;         //出る時の速度タイプ
-
-    public ReachedEvent reached;                      //ポイント到達時のイベント
-
-    //初期化
+    /*! @brief 初期化*/
     public Waypoint()
     {
         position = Vector3.zero;
@@ -61,19 +53,19 @@ public class Waypoint
     }
 }
 
-/*! @brief カメラポイント情報*/
 [Serializable]
+/*! @brief カメラポイント情報*/
 public class CameraWaypoint
 {
-    public bool inspectorView;                   //インスペクターに描画するかどうか
-    public float currentPos;                        //プレイヤーパス上の位置
-    public float offsetY;                                   //Y軸移動のオフセット
-    public float dist;                                     //距離
-    public Vector3 lookOffset;                              //注視のオフセット
-    public Vector3 cameraVec;                               //カメラのある方向
-    public Transform lookAt;                                //そのポイントにおける注視点
-    public Vector3 position;                       //ポイントのある座標
-    public Quaternion rotation;                 //そのポイントの回転
+    public bool inspectorView;        /*! インスペクターに描画するかどうか*/
+    public float currentPos;              /*! プレイヤーパス上の位置*/
+    public float offsetY;                     /*! Y軸移動のオフセット*/
+    public float dist;                            /*! 距離*/
+    public Vector3 lookOffset;         /*! 注視のオフセット*/
+    public Vector3 cameraVec;        /*! カメラのある方向*/
+    public Transform lookAt;           /*! そのポイントにおける注視点*/
+    public Vector3 position;             /*! ポイントのある座標*/
+    public Quaternion rotation;      /*! そのポイントの回転*/
 
     /*! @brief 初期化*/
     public CameraWaypoint()

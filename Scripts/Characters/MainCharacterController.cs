@@ -10,112 +10,95 @@ using System.Collections.Generic;
 using UnityEngine;
 using InputGamePad;
 
+/*! @brief メインキャラクター管理クラス*/
 public class MainCharacterController : MonoBehaviour
 {
-    /*!public宣言*/
-    public float jumpPower = 0f;                      //ジャンプ力
-    public float throwPower = 0f;                     //投げる力
-    public int rollUpPower = 0;                         //巻き上げる力
-    public float lookAngle = 0f;                        //キャラクターの向く角度
-    public int moveSpeed = 0;                         //移動量
-    public LayerMask groundLayer;                   //地面のレイヤー
-    public Transform subCharaPos;                     //他プレイヤーの位置
-    public Collider subCharaCol;                         //他プレイヤーの当たり判定
-    public Rigidbody subCharaRig;                     //他プレイヤーの当たり判定
-    public Animator animator;
-    public PlayerPath playerPath;                     //プレイヤーの移動軌跡
-    public static bool isLookFront = true;        //前を見ているか
-    public static bool isSubScissor;                //サブキャラがはさんでいるか
-    public static Collider mainScissor;
-    public float hookShotRange;
-    public bool isSublayerCarry = false;             //サブキャラ運んでいるか
-
-
-    /*!private宣言*/
-    private bool isItemCarry = false;                   //アイテムを運んでいるか
-    private bool isCarry = false;
-    private GameObject nearGimmick = null;      //ギミック
-    private bool isAbleJump = true;                 //ジャンプ可能フラグ
-    private Vector2 Stick;                                  //左スティックの入力値
-    private float Ltrg;
-    private float Rtrg;
-    private Vector3 nearGimmickPos;                //最も近いギミックの座標
-    private Vector3 throwAngle;                       //メインプレイヤーとカーソルの角度
-    private Rigidbody rigidBody;
-    private GameObject cursor;                        //カーソル取得
-    private int dir;
-    private float dist;
-    private bool HookShotInitFlg = true;
-    private float DistX;
-    private float DistY;
-    private bool initTarzanFlg;
-    private float tarzanDistX;
-    private float tarzanDistZ;
-
-    private float nowTime;
-    private float afterTime;
-    private float countX;
-    private float countY;
-    private bool isSwingFront;
-    private bool high;
-    private float timeY = 0.04f;
-    private float tarzanDistY = 0.0f;
-    private Vector3 tarzanHigh;
-
-    //振子運動関係=======
-    public float windUpPower=1f;                                   //巻き上げる力
-    private float radius;                                                   //半径
-    [Range(0f, 5f)] public float minRadius=1f;              //半径最小値
-    private float maxRadius;                                          //半径最大値
-    [Range(0f, 1f)] public float acceleration=1f;            //加速力
-    private float addAccele;                                            //角度加算値
-    [Range(0f, 10f)] public float firstAcceleSpeed=0.1f;      //初速保存
-    private float accelSpeed;                                               //速度
-    [Range(0f, 0.1f)] public float gravityAccele=0.5f;                 //重力加速度
-    private bool isPendulum = false;                                //振り子フラグ
-    private float swingAngle;                                           //振り幅
-    private bool pendulumDirX = false;                                          //振り子の方向
-    private float preAngleDeg;                                      //更新前の振子の角度
-    private float newAngleDeg;                                             //更新後の振子の角度
-    private Vector3 fulcrum;                                            //支点
-    private Vector3 prePos;
-    //=======
-
-    public enum State
+    public float jumpPower = 0f;                      /*! ジャンプ力*/
+    public int rollUpPower = 0;                         /*! 巻き上げる力*/
+    public float lookAngle = 0f;                         /*! キャラクターの向く角度*/
+    private float moveSpeed = 0f;                    /*! 移動量*/
+    public float normalSpeed = 1f;                    /*! 通常移動速度*/
+    public float dashSpeed = 2f;                        /*! ダッシュ時移動速度*/
+    public LayerMask groundLayer;                 /*! 地面のレイヤー*/
+    public GameObject subPlayer;                    /*! サブキャラクターオブジェクト*/
+    public Animator animator;                           /*! アニメーター*/
+    public PlayerPath playerPath;                     /*! プレイヤーの移動軌跡*/
+    public static bool isLookFront = true;       /*! 前を見ているか*/
+    public static bool isSubScissor;                   /*! サブキャラがはさんでいるか*/
+    public static Collider mainScissor;              /*! 挟み判定をするコライダー*/
+    public bool isSublayerCarry = false;           /*! サブキャラ運んでいるか*/
+    public Transform leftHand;                          /*! 左手*/
+    public Transform rightHand;                       /*! 右手*/
+    public enum State                                          /*! 行動状態*/
     {
-        eNormal = 0,    //通常
-
-        // イベントステート
-        eAction,
-        eScissors,          //鋏む
-        eHung,              //ぶら下がり
-        eAim,                //狙う
-        eBlowAway,                   //飛んでいる状態
+        eNormal = 0,       //通常
+        eStop,                   //停止
+        eAction,               //振り子
+        eScissors,            //鋏む
+        eHung,                 //ぶら下がり
+        eAim,                    //狙う
+        eBlowAway,       //飛んでいる状態
     }
-    State state;
-    private object newPos;
+    private State state;        /*! 行動状態*/
+
+    private Rigidbody subPlayerRig;                            /*! サブキャラクターのリジッドボディ*/
+    private bool isItemCarry = false;                            /*! アイテムを運んでいるか*/
+    private bool isCarry = false;                                     /*! 何かを運んでいるか*/
+    private GameObject nearGimmick = null;           /*! ギミック*/
+    private bool isAbleJump = true;                             /*! ジャンプ可能フラグ*/
+    private Vector2 Stick;                                                /*! 左スティックの入力値*/
+    private float Ltrg;                                                       /*! 左トリガーの入力値*/
+    private float Rtrg;                                                      /*! 右トリガーの入力値*/
+    private Rigidbody rigidBody;                                 /*! 自身のリジッドボディ*/
+    private GameObject cursor;                                   /*! カーソルオブジェクト*/
+    private CameraWork cameraWork;                     /*! カメラワーク管理クラス*/
+    private const float lookDist = 5f;                          /*! プレイヤーの注視距離*/
+    private Vector3 preLookAt;                                   /*! 更新前の注視座標*/
+    private float prePathPos;                                       /*! 更新前のパス上の位置*/
+
+    // 振子運動関係
+    public float windUpPower = 1f;                                                              /*! 巻き上げる力*/
+    private float radius;                                                                                    /*! 半径*/
+    [Range(0f, 5f)] public float minRadius = 1f;                                        /*! 半径最小値*/
+    private float maxRadius;                                                                          /*! 半径最大値*/
+    [Range(0f, 1f)] public float acceleration = 1f;                                     /*! 加速力*/
+    private float addAccele;                                                                            /*! 角度加算値*/
+    [Range(0f, 10f)] public float firstAcceleSpeed = 0.1f;                      /*! 初速保存*/
+    private float accelSpeed;                                                                          /*! 速度*/
+    [Range(0f, 0.1f)] public float gravityAccele = 0.5f;                           /*! 重力加速度*/
+    private bool isPendulum = false;                                                            /*! 振り子フラグ*/
+    private float swingAngle;                                                                         /*! 振り幅*/
+    private bool pendulumDirX = false;                                                       /*! 振り子の方向*/
+    private float preAngleDeg;                                                                      /*! 更新前の振子の角度*/
+    private float newAngleDeg;                                                                    /*! 更新後の振子の角度*/
+    private Vector3 fulcrum;                                                                          /*! 支点*/
+    private Vector3 prePos;                                                                           /*! 更新前座標*/
+    private float posDiff;                                                                                 /*! 座標の差分*/
+    const float pendulumMag = 10f;                                                           /*! 振り子時の移動倍率*/
+    public float blowAwayPower = 10;                                                       /*! 水平軸の吹っ飛び力*/
+    public float blowAwayUpPow = 1000f;                                               /*! 吹っ飛び上方への力*/
+    [Range(0f, 90f)] public float no_blowAwayDegMin = 45f;          /*! 吹っ飛び時の上方へ飛ばない最小の角度*/
+    [Range(91f, 180f)] public float no_blowAwayDegMax = 135f;    /*! 吹っ飛び時の上方へ飛ばない最大の角度*/
+    private bool isHangFront;                                                                       /*! 前方方向へぶら下がっているかどうか*/
+    //
 
     /*! @brief   初期化*/
     void Start()
     {
         rigidBody = GetComponent<Rigidbody>();
-        subCharaCol.GetComponent<Collider>();
         cursor = GameObject.Find("cursor");
-
+        cameraWork = GameObject.Find("CameraWork").GetComponent<CameraWork>();
+        subPlayerRig = subPlayer.GetComponent<Rigidbody>();
         state = State.eNormal;
         animator = GetComponent<Animator>();
-        subCharaPos = GameObject.FindGameObjectWithTag("SubPlayer").transform;
-
-        nowTime = Mathf.Sin(Time.time);
-        afterTime = nowTime;
     }
 
     /*! @brief   物理演算系更新*/
     private void FixedUpdate()
     {
-        InputController();
-        Move();
-        Motion();
+        InputController();      //コントローラ入力検知
+        Move();                         //移動
+        Motion();                       //モーション
     }
 
     /*! @brief   移動*/
@@ -135,12 +118,14 @@ public class MainCharacterController : MonoBehaviour
                 BlowAway();
                 break;
         }
-        if (playerPath)
+        //座標更新
+        if (playerPath && state != State.eStop)
         {
             Vector3 add = playerPath.GetAddPotision();
             if (add != Vector3.zero)
             {
                 prePos = transform.position;
+                prePathPos = playerPath.currentPos;
             }
             transform.position += add;
         }
@@ -149,51 +134,6 @@ public class MainCharacterController : MonoBehaviour
     /*! @brief   メインキャラクターのアクション*/
     void Action()
     {
-#if false
-        // 重力オフ
-        rigidBody.velocity = Vector3.zero;
-
-        if (initTarzanFlg)
-        {
-			// フックの真下へ移動
-			playerPath.SetInput((subCharaPos.position.x - transform.position.x), moveSpeed * 2);
-
-			if (isLookFront)
-			{
-				isSwingFront = true;
-			}
-			else
-			{
-				isSwingFront = false;
-			}
-        }
-        else
-        {
-			Tarzan();
-		}
-
-		// フックの真下に来たらフラグを折る
-		if (subCharaPos.position.x + 0.5 > transform.position.x &&
-			subCharaPos.position.x - 0.5 < transform.position.x && 
-			initTarzanFlg
-			)
-		{
-            countX = 0; // カウントリセット
-            countY = 0;
-            initTarzanFlg = false;
-            high = true;
-
-            tarzanDistY = Vector3.Distance(subCharaPos.transform.position, transform.position);
-            tarzanHigh = transform.position;
-        }
-
-        // フックを離した
-        if (!isSubScissor)
-        {
-            state = State.eNormal;
-			Jump();
-		}
-#else
         if (!isPendulum)
         {
             //振り子初期化
@@ -207,83 +147,67 @@ public class MainCharacterController : MonoBehaviour
         {
             isPendulum = false;
             rigidBody.useGravity = true;
-            subCharaRig.useGravity = true;
-            subCharaRig.isKinematic = false;
+            subPlayerRig.useGravity = true;
+            animator.SetBool("isHangFront", false);
+            animator.SetBool("isHangBack", false);
             animator.SetBool("isLeave", true);
-
             state = State.eBlowAway;
+            if (swingAngle <= no_blowAwayDegMin || swingAngle >= no_blowAwayDegMax)
+            {
+                rigidBody.AddForce(Vector3.up * blowAwayUpPow);
+            }
         }
-
-#endif
     }
 
     /*! @brief 振子運動による吹き飛び*/
     void BlowAway()
     {
+        BringItem();
+        playerPath.SetInput(1f, posDiff * blowAwayPower);
         Vector3 newPos = transform.position - (transform.up * 3.5f);
         if (Physics.Linecast(transform.position, newPos, groundLayer))
+        {
             state = State.eNormal;
+        }
+    }
+
+    /*! @brief アイテム所持*/
+    void BringItem()
+    {
+        if(isItemCarry && nearGimmick!=null)
+        {
+            Vector3 itemPos = (leftHand.position + rightHand.position) / 2;
+            nearGimmick.transform.position = itemPos;
+        }
     }
 
     #region　振子運動
     /*! @brief 振子運動の設定*/
     void PendulumSetting()
     {
-#if true
-
         Vector3 vec = transform.position - prePos;
-        Debug.Log(vec);
         vec.y = 0f;
         float x = Mathf.Abs(vec.x);
         float z = Mathf.Abs(vec.z);
-        if(x>=z)
+        if (x >= z)
         {
-            pendulumDirX = true;    
+            pendulumDirX = true;
         }
         else
         {
             pendulumDirX = false;
         }
 
-        radius = Vector3.Distance(transform.position, subCharaPos.position);
+        radius = Vector3.Distance(transform.position, subPlayer.transform.position);
         maxRadius = radius;
-        Vector3 targetDir = transform.position - subCharaPos.position;
-        //Vector3 dir = Vector3.right;
-        //if (!pendulumDirX)
-        //{
-        //    dir = Vector3.forward;
-        //}
+        Vector3 targetDir = transform.position - subPlayer.transform.position;
         Vector3 dir = Vector3.Normalize(vec);
         swingAngle = Vector3.Angle(targetDir, dir);
-        Debug.Log(swingAngle);
-        //Debug.Log(targetDir);
-        //if ((swingAngle >= 90f && targetDir.x <= targetDir.z)
-        //    || (swingAngle < 90f && targetDir.x >= targetDir.z))
-        //{
-        //    pendulumDirX = true;
-        //}
-        //else
-        //{
-        //    pendulumDirX = false;
-        //}
-
         addAccele = 0;
         accelSpeed = firstAcceleSpeed;
         rigidBody.useGravity = false;
-        subCharaRig.useGravity = false;
-        subCharaRig.isKinematic = true;
-#else
-        radius = Vector3.Distance(transform.localPosition, subCharaPos.localPosition);
-        maxRadius = radius;
-        Vector3 targetDir = transform.localPosition - subCharaPos.localPosition;
-        Vector3 right = (subCharaPos.localPosition + Vector3.right) - subCharaPos.localPosition;
-        swingAngle = Vector3.Angle(targetDir, right);
-        addAccele = 0;
-        accelSpeed = firstAcceleSpeed;
-        rigidBody.useGravity = false;
-        subCharaRig.useGravity = false;
-        subCharaRig.isKinematic = true;
-#endif
+        subPlayerRig.useGravity = false;
+        SetPendulumAnimation();
     }
 
     /*! @brief 巻き上げ*/
@@ -323,9 +247,8 @@ public class MainCharacterController : MonoBehaviour
         Hoisting();
         //振り子の加速
         PendulumAcceleration();
-#if true
         //支点
-        fulcrum = subCharaPos.position;
+        fulcrum = subPlayer.transform.position;
         fulcrum.y *= -1f;
 
         //現在の位置
@@ -365,31 +288,26 @@ public class MainCharacterController : MonoBehaviour
         swingAngle += accelSpeed + addAccele;
 
         //新しい位置
-        newAngleDeg = rad;
+        newAngleDeg = swingAngle;
         rad = swingAngle * Mathf.Deg2Rad;
         px = fulcrum.x + Mathf.Cos(rad) * radius;
         py = (fulcrum.y + Mathf.Sin(rad) * radius) * -1f;
-         pz = fulcrum.z + Mathf.Cos(rad) * radius;
-        //Debug.Log("Cos:" + (Mathf.Cos(rad)));
-        //Debug.Log("rad:"+(Mathf.Cos(rad) * radius));
-        // Debug.Log("px:" + px);
+        pz = fulcrum.z + Mathf.Cos(rad) * radius;
 
         //高さは振子運動を使用
         Vector3 tempPos = transform.position;
         tempPos.y = py;
         transform.position = tempPos;
-        Vector3 dir = fulcrum - transform.position;
 
         //水平軸はパスに添わせる
         Vector3 vec = new Vector3(px, 0f, pz) - transform.position;
-        float diff = (pendulumDirX) ? vec.x : vec.z;
-        const float pendulumMag = 10f;
-        //Debug.Log("diff: "+diff);
-        float dm = Vector3.Magnitude(new Vector3(px, 0f, pz));
-        float tm = Vector3.Magnitude(new Vector3(transform.position.x, 0f, transform.position.z));
-        //Debug.Log(dm-tm);
-        playerPath.SetInput(1f,diff* pendulumMag);
-#endif
+        posDiff = (pendulumDirX) ? vec.x : vec.z;
+        playerPath.SetInput(1f, posDiff * pendulumMag);
+
+        //アイテム所持時の更新
+        BringItem();
+        //アニメ―ション更新
+        TransitionAnimationByPendulum();
     }
 
     /*! @brief 支点の取得*/
@@ -410,9 +328,41 @@ public class MainCharacterController : MonoBehaviour
     {
         return isPendulum;
     }
+
+    /*! @brief 振り子のモーション初期設定*/
+    void SetPendulumAnimation()
+    {
+        if(playerPath.currentPos>prePathPos)
+        {
+            isHangFront = (swingAngle < 90f) ? true : false;
+        }
+        else
+        {
+            isHangFront = (swingAngle < 90f) ? false: true;
+        }
+        animator.SetBool("isHangFront", isHangFront);
+        animator.SetBool("isHangBack", !isHangFront);
+    }
+    
+    /*! @brief 振り子状態の時のアニメーション遷移*/
+    void TransitionAnimationByPendulum()
+    {
+        if (isItemCarry) return;
+        if(isHangFront && preAngleDeg<newAngleDeg)
+        {
+            isHangFront = !isHangFront;
+        }
+        else if(!isHangFront&&preAngleDeg>newAngleDeg)
+        {
+            isHangFront = !isHangFront;
+        }
+
+        animator.SetBool("isHangFront", isHangFront);
+        animator.SetBool("isHangBack", !isHangFront);
+    }
     #endregion 
 
-    /*! @brief   メインキャラクターの移動*/
+    /*! @brief メインキャラクターの移動*/
     void NormalMove()
     {
         //横移動
@@ -430,22 +380,19 @@ public class MainCharacterController : MonoBehaviour
         //キャラクターの中央から足元にかけて、接地判定用のラインを引く
         Vector3 newPos = transform.position - (transform.up * 3.5f);
 
-        isAbleJump = Physics.Linecast(transform.position, newPos, groundLayer); //Linecastが判定するレイヤー 
-
-        Debug.DrawLine(transform.position, newPos, Color.cyan);
+        isAbleJump = Physics.Linecast(transform.position, newPos, groundLayer); // Linecastが判定するレイヤー 
 
         if (isSublayerCarry)
         {
             // サブキャラを持ち上げる
-            subCharaRig.velocity = Vector3.zero;
-            animator.SetBool("isScissorsBack", true);
-            nearGimmick.transform.position = gameObject.transform.FindChild("Alli").transform.position;
+            animator.SetBool("isScissorsUp", true);
         }
         else if (isItemCarry)
         {
             // アイテムを持ち上げる
             animator.SetBool("isScissors", true);
-            nearGimmick.transform.position = gameObject.transform.FindChild("Hand").transform.position;
+            Vector3 itemPos = (leftHand.position + rightHand.position) / 2;
+            nearGimmick.transform.position = itemPos;
         }
 
         // ギミックを離す
@@ -453,11 +400,10 @@ public class MainCharacterController : MonoBehaviour
         {
             if (isSublayerCarry)
             {
-                ThrowAim(transform.position, cursor.transform.position);
                 isSublayerCarry = false;
-                animator.SetBool("isScissorsBack", false);
+                cursor.GetComponent<CursorMove>().throwPos = cursor.transform.position;
+                animator.SetBool("isScissorsUp", false);
                 animator.SetBool("isLeave", true);
-
             }
             else if (isItemCarry)
             {
@@ -466,21 +412,17 @@ public class MainCharacterController : MonoBehaviour
             }
 
             isCarry = false;
-
-            nearGimmickPos = transform.position * -2f;
+            
             nearGimmick = null;
-            HookShotInitFlg = true;
             isSubScissor = false;
         }
 
-        // ターザン
+        //振り子
         if (SubCharacterController.subScissor != null)
         {
             if (SubCharacterController.subScissor.transform.tag == "Hook" && Ltrg > 0.8f && Stick.y > 0.8f)
             {
                 isSubScissor = true;
-                initTarzanFlg = true;
-                //HookShot();
             }
         }
         if (isSubScissor)
@@ -489,7 +431,19 @@ public class MainCharacterController : MonoBehaviour
         }
     }
 
-    /*! @brief   コントローラーの入力*/
+    /*! @brief 通常移動にリセット*/
+    public void SetNormalState()
+    {
+        state = State.eNormal;
+    }
+
+    /*! @brief 停止セット*/
+    public void SetStopState()
+    {
+        state = State.eStop;
+    }
+
+    /*! @brief   コントローラーの入力検知*/
     void InputController()
     {
         Stick = GamePad.GetLeftStickAxis(false);
@@ -506,39 +460,47 @@ public class MainCharacterController : MonoBehaviour
             return Rtrg;
     }
 
-    /*! @brief   アニメーション管理*/
+    /*! @brief   移動アニメーション*/
     void Motion()
     {
-        #region 歩く
-        if (Stick.x != 0f)
+        if (state == State.eNormal)
         {
-            animator.SetBool("isWalk", true);
+            #region 歩く
+            if (Stick.x != 0f)
+            {
+                animator.SetBool("isWalk", true);
+            }
+            else if (Stick.x == 0f)
+            {
+                animator.SetBool("isWalk", false);
+            }
+            #endregion
+            #region ダッシュ
+            if (GamePad.GetButton(GamePad.Button.Dash) && Stick.x != 0f && isAbleJump)
+            {
+                animator.SetBool("isDash", true);
+                moveSpeed = dashSpeed;
+            }
+            else
+            {
+                animator.SetBool("isDash", false);
+                moveSpeed = normalSpeed;
+            }
+            #endregion
         }
-        else if (Stick.x == 0f)
-        {
-            animator.SetBool("isWalk", false);
-        }
-        #endregion
-
-        #region ダッシュ
-        if (GamePad.GetButton(GamePad.Button.Dash) && Stick.x != 0f && isAbleJump)
-        {
-            animator.SetBool("isDash", true);
-            moveSpeed = 2;
-        }
-        else
-        {
-            animator.SetBool("isDash", false);
-            moveSpeed = 1;
-        }
-        #endregion
-
     }
 
     /*! @brief   ジャンプ*/
     void Jump()
     {
-        animator.SetBool("isNormalJump", true);
+        if (isItemCarry)
+        {
+            animator.SetBool("isScissorsJump", true);
+        }
+        else
+        {
+            animator.SetBool("isNormalJump", true);
+        }
         isAbleJump = false;
     }
 
@@ -548,158 +510,28 @@ public class MainCharacterController : MonoBehaviour
         rigidBody.AddForce(Vector3.up * jumpPower);
     }
 
-    /*! @brief   フックショット*/
-    void HookShot()
-    {
-        Debug.Log("フックショット発動中");
-        if (HookShotInitFlg == true)
-        {
-            DistX = subCharaPos.transform.position.x - transform.position.x;
-            DistY = subCharaPos.transform.position.y - transform.position.y;
-            //Debug.Log(DistX);
-            //Debug.Log(DistY);
-
-            HookShotInitFlg = false;
-        }
-        else
-        {
-            // 重力オフ
-            rigidBody.velocity = Vector3.zero;
-            //二点の距離を算出
-            dist = Vector3.Distance(subCharaPos.transform.position, transform.position);
-
-            if ((subCharaPos.transform.position.x - transform.position.x) <= hookShotRange &&
-                (subCharaPos.transform.position.x - transform.position.x) >= hookShotRange * -1)
-            {
-                dir = 0;
-            }
-            else if ((subCharaPos.transform.position.x - transform.position.x) > hookShotRange)
-            {
-                dir = 1;
-            }
-            else if ((subCharaPos.transform.position.x - transform.position.x) < hookShotRange * -1)
-            {
-                dir = -1;
-            }
-
-            // 目標へ移動
-
-            //x軸移動
-            playerPath.SetInput(dir, rollUpPower);
-
-            //y軸移動
-            Vector3 newPos = transform.position;
-            newPos.y = Mathf.MoveTowards(transform.position.y, subCharaPos.position.y, DistY / ((((playerPath.GetTimePerSegment()) * rollUpPower) * DistY) / DistX));
-            transform.position = newPos;
-        }
-    }
-#if true
-    /*! @brief   ターザン*/
-    void Tarzan()
-    {
-        // ターザン
-        int dir;
-        if (isSwingFront)
-        {
-            countX += 0.04f;
-        }
-        else
-        {
-            countX -= 0.04f;
-        }
-
-        nowTime = Mathf.Sin(countX);
-
-        // メインキャラとサブキャラの二点の距離間を保存
-        tarzanDistX = subCharaPos.position.x - transform.position.x;
-        tarzanDistZ = subCharaPos.position.z - transform.position.z;
-
-        // 1フレーム前の数値の比較
-        if (nowTime >= afterTime)
-        {
-            isLookFront = true;
-            dir = 1;
-        }
-        else
-        {
-            isLookFront = false;
-            dir = -1;
-        }
-
-        // 縦移動
-
-        //  ２点間の角度を求める
-        Vector2 abst = subCharaPos.position - tarzanHigh;
-        float toAngle = -Mathf.Atan2(abst.y, abst.x);
-
-        transform.position = subCharaPos.position + new Vector3(dist * Mathf.Cos(toAngle), dist * Mathf.Sin(toAngle));
-
-        #region 振り子運動
-        //if (Mathf.Sin(countX) < 0)
-        //{
-        //    tarzanHigh.y = transform.position.y + (tarzanDistY) * Mathf.Sin(countX) / 5.5f;
-
-        //}
-        //else
-        //{
-        //    tarzanHigh.y = transform.position.y - (tarzanDistY) * Mathf.Sin(countX) / 5.5f;
-        //}
-
-        //tarzanHigh.y = transform.position.y + (tarzanDistX * Mathf.Sin(countX)) / 30 * -1;
-        //tarzanHigh.y = (subCharaPos.position.y - (tarzanDistX) * Mathf.Sin(countX)) - subCharaPos.position.y / 2;
-        #endregion
-
-        // 横移動
-        //playerPath.SetInput(dir, 2);
-
-        //Debug.Log(Vector2.Distance(subCharaPos.transform.position, transform.position));
-
-        // 更新
-        afterTime = nowTime;
-    }
-#endif
-
     /*! @brief 回転補整*/
     void NormalRotation()
     {
-        Vector3 rot = transform.FindChild("body").gameObject.transform.localEulerAngles;
-
-        transform.LookAt(transform.position + playerPath.GetAddPotision());
-
-        // 正面から角度を加減して進行方向へ向く
-
-        //キャラの注視方向
-        if (Stick.x > 0.01 && !isLookFront)
+        Vector3 dir = playerPath.GetAddPotision();
+        if (dir == Vector3.zero)
         {
-            isLookFront = true;
+            dir = preLookAt;
         }
-        if (Stick.x < -0.01 && isLookFront)
+        preLookAt = dir;
+        if (!isSublayerCarry)
         {
-            isLookFront = false;
+            dir *= lookDist;
+            dir += cameraWork.GetCameraVec();
         }
-        if (isLookFront)
-        {
-            rot.y = lookAngle;
-        }
-        else
-        {
-            rot.y = lookAngle * -1;
-        }
-
-        transform.FindChild("body").gameObject.transform.localRotation = Quaternion.Euler(rot);
+        Vector3 lookat = transform.position + dir;
+        transform.LookAt(lookat);
     }
 
-    /*! @brief   メインプレイヤーからカーソルへの角度算出して投げる*/
-    void ThrowAim(Vector3 player, Vector3 cursor)
+    /*! @brief サブプレイヤーのステートを運ぶに変更*/
+    public void ChangeSubStateToCarry()
     {
-        throwAngle = cursor - player;
-        subCharaRig.AddForce(throwAngle * throwPower);
-    }
-
-    /*! @brief 自身が振り子の支点になる*/
-    void Hook()
-    {
-
+        subPlayer.GetComponent<SubCharacterController>().SetStateBeCarried();
     }
 
     /*! @brief 行動状況の取得*/
@@ -711,13 +543,13 @@ public class MainCharacterController : MonoBehaviour
     /*! @brief 衝突した瞬間検知*/
     void ChildOnTriggerEnter(Collider col)
     {
-        if (col.tag == "Gimmick")
+        if (col.tag == "Gimmick")　//ギミックに触れたらギミック発動
         {
             col.GetComponent<Gimmick>().isGimmick = true;
         }
     }
-
-    /*! @brief   プレイヤーが衝突した*/
+    
+    /*! @brief   衝突を継続検知*/
     void ChildOnTriggerStay(Collider col)
     {
         mainScissor = col;
@@ -726,7 +558,6 @@ public class MainCharacterController : MonoBehaviour
         if (Rtrg > 0.8 && !isCarry && (mainScissor.tag == "SubPlayer" || mainScissor.tag == "Item"))
         {
             nearGimmick = mainScissor.gameObject;
-            nearGimmickPos = transform.position;
             isCarry = true;
 
             if (mainScissor.tag == "SubPlayer")
@@ -740,15 +571,10 @@ public class MainCharacterController : MonoBehaviour
         }
     }
 
-    /*! @brief   Clip部分が衝突していない*/
+    /*! @brief   衝突から離れたかどうかの検知*/
     void ChildOnTriggerExit(Collider col)
     {
         mainScissor = col;
-        //触れていたオブジェクトがギミックの時
-        if (mainScissor.transform.tag == "SubPlayer")
-        {
-            //Debug.Log("離れた");
-        }
     }
-
 }
+

@@ -3,15 +3,17 @@
  * @brief フェード管理クラス
  * @date    2017/05/17
  * @author 仁科香苗
+* @note 参考:テラシュールブログ(http://tsubakit1.hateblo.jp/entry/20140505/1399289078)
  */
 using System.Collections;
 using UnityEngine.Assertions;
 using UnityEngine;
 
+/*! @brief フェード管理クラス*/
 public class FadeControl : MonoBehaviour
 {
-    FadeBase fade;
-    float cutoutRange;      //フェードする範囲
+    private FadeBase fade;              /*! フェードベース*/
+    private float cutoutRange;      /*! フェードする範囲*/
 
     /*! @brief 更新前初期化 */
     void Start()
@@ -75,6 +77,8 @@ public class FadeControl : MonoBehaviour
         StopAllCoroutines();
         return StartCoroutine(FadeInCoroutine(time, action));
     }
+
+    /*! @brief フェードイン呼び出し*/
     public Coroutine FadeIn(float time)
     {
         return FadeIn(time, null);
@@ -86,6 +90,8 @@ public class FadeControl : MonoBehaviour
         StopAllCoroutines();
         return StartCoroutine(FadeOutCoroutine(time, action));
     }
+
+    /*! @brief フェードイン呼び出し*/
     public Coroutine FadeOut(float time)
     {
         return FadeOut(time, null);

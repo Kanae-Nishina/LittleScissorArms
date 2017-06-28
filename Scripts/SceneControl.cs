@@ -10,22 +10,20 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using InputGamePad;
 
+/*! @brief シーン管理クラス*/
 public class SceneControl : MonoBehaviour
 {
-    public float fadeTime = 1f;                   //フェードにかける時間
-    public string[] sceneName;
-    public AudioClip[] bgm;
-    int sceneNumber = 0;
+    public float fadeTime = 1f;                   /*! フェードにかける時間*/
+    public string[] sceneName;                 /*! 遷移するシーン名*/
+    public AudioClip[] bgm;                        /*! そのシーンで再生するBGM*/
 
-    AudioSource audio;
-
-    Dictionary<string, AudioClip> sceneSoundDic;
-    List<GameObject> dontDestroy;      //Sシーンをまたいでも消さないオブジェクト
-
+    private int sceneNumber = 0;                                                   /*! 現在のシーン番号*/
+    private AudioSource audioSorce;                                           /*! オーディオソース*/
+    private Dictionary<string, AudioClip> sceneSoundDic;    /*! BGMの名前とBGMの紐づけ*/
+    private List<GameObject> dontDestroy;                              /*! シーンをまたいでも消さないオブジェクト*/
+    private static SceneControl instanceThis = null;                 /*! シングルトン用クラスのインスタンス*/
     [SerializeField]
-    FadeControl fade = null;
-
-    static SceneControl instanceThis = null;
+    private FadeControl fade = null;            /*! フェード管理クラス*/
 
     /*! @brief インスタンス取得*/
     static SceneControl instance
@@ -48,7 +46,6 @@ public class SceneControl : MonoBehaviour
         dontDestroy = new List<GameObject>();
         foreach (Transform child in transform)
         {
-            //DontDestroyOnLoad(child);
             dontDestroy.Add(child.gameObject);
         }
         sceneSoundDic = new Dictionary<string, AudioClip>();
@@ -61,27 +58,28 @@ public class SceneControl : MonoBehaviour
         }
     }
 
+    /*! @brief 更新前初期化*/
     private void Start()
     {
-        audio = GetComponent<AudioSource>();
-        audio.clip = sceneSoundDic[sceneName[sceneNumber]];
-        audio.Play();
+        audioSorce = GetComponent<AudioSource>();
+        audioSorce.clip = sceneSoundDic[sceneName[sceneNumber]];
+        audioSorce.Play();
     }
 
     /*! @brief 更新*/
     private void Update()
     {
-        if (GamePad.GetButtonDown(GamePad.Button.Start) || Input.GetKeyDown(KeyCode.A))
+        if ((GamePad.GetButtonDown(GamePad.Button.Start) || Input.GetKeyDown(KeyCode.A)))
         {
             ++sceneNumber;
             if (sceneNumber == sceneName.Length)
             {
                 sceneNumber = 0;
             }
-
             ChangeScene();
         }
     }
+
 
     /*! @brief シーン遷移*/
     public void ChangeScene()
@@ -89,15 +87,17 @@ public class SceneControl : MonoBehaviour
         fade.FadeIn(fadeTime, () =>
         {
             SceneManager.LoadScene(sceneName[sceneNumber]);
-            audio.Stop();
-            audio.clip = sceneSoundDic[sceneName[sceneNumber]];
-            audio.Play();
-            fade.FadeOut(fadeTime, () => { });
-            if (sceneName[sceneNumber] ==  "Maingame")
-            {
-                Application.LoadLevelAdditive("Clear");
-            }
-
+            audioSorce.Stop();
+            audioSorce.clip = sceneSoundDic[sceneName[sceneNumber]];
+            audioSorce.Play();
+            fade.FadeOut(fadeTime, () =>{});
         });
+    }
+
+    /*! @brief クリアシーンの追加*/
+    public void AddClearScene()
+    {
+        SceneManager.LoadScene("Clear", LoadSceneMode.Additive);
+        GameObject.Find("chara_newbig").GetComponent<MainCharacterController>().SetStopState(); //プレイヤーの移動を停止する
     }
 }

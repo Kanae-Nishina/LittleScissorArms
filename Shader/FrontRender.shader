@@ -1,5 +1,11 @@
-﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
-
+﻿/*!
+*	@file FrontRender.shader
+*	@brief スプライトの前面描画
+*	@date	2017/06/02
+*	@author	仁科香苗
+* @note 参考:テラシュールブログ(http://tsubakit1.hateblo.jp/entry/2015/08/28/233000)
+*/
+// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
 
 Shader "Sprites/FrontRender"
 {
