@@ -101,17 +101,18 @@ namespace InputGamePad
 
             return 0f;
         }
-        
+
         /*! @briefトリガー入力状態*/
-        public static float GetTrigger(Trigger trigger, bool raw)
+        public static bool GetTrigger(Trigger trigger, bool raw)
         {
             string name = "";
+            bool input = false;
             //キーボード操作用(デバッグ用)
             if (trigger == Trigger.LeftTrigger || trigger == Trigger.L_Scissors)
             {
                 if (Input.GetKey(KeyCode.Q))
                 {
-                    return 1;
+                    input = true;
                 }
                 name = "TriggersL";
             }
@@ -119,7 +120,7 @@ namespace InputGamePad
             {
                 if (Input.GetKey(KeyCode.E))
                 {
-                    return 1;
+                    input = true;
                 }
                 name = "TriggersR";
             }
@@ -141,7 +142,9 @@ namespace InputGamePad
                 Debug.LogError(e);
                 Debug.LogWarning("InputError:" + name);
             }
-            return axis;
+            if (axis > 0.5f)
+                input = true;
+            return input;
         }
 
         /*! @brief ゲームパッドの押下状態*/
@@ -207,10 +210,10 @@ namespace InputGamePad
         public bool Jump = false;
         public bool Decide = false;
         public bool Cancel = false;
-        public float LeftTrigger = 0f;
-        public float RightTrigger = 0f;
-        public float L_Scissors = 0f;
-        public float R_Scissors = 0f;
+        public bool LeftTrigger = false;
+        public bool RightTrigger = false;
+        public bool L_Scissors = false;
+        public bool R_Scissors = false;
         public Vector2 LeftStick = Vector2.zero;
     }
 }

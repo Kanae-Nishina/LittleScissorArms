@@ -12,8 +12,12 @@ using InputGamePad;
 /*! @brief サブキャラクター管理クラス*/
 public class SubCharacterController : MonoBehaviour
 {
+    public float jumpPower=500f;                /*! ジャンプ力*/
     public float beThrownPower;                       /*! 投げられる力*/
-    public float moveStopDist = 0f;             /*! サブキャラが止まる距離*/
+    public float moveStopDist = 1f;             /*! サブキャラが止まる距離*/
+    public float normalMoveSpeed = 1f;                /*! 通常移動速度*/
+    public float dashSpeed = 1f;                /*! ダッシュ移動速度*/
+    public float followOffsetY;                 /*! 追従処理の*/
     public GameObject mainChara;            /*! メインキャラクター*/
     [System.NonSerialized]
     public static bool isScissor;           /*! 鋏み*/
@@ -27,16 +31,18 @@ public class SubCharacterController : MonoBehaviour
     private CameraWork camerawork;                 /*! カメラワーク管理クラス*/
     private GameObject nearGimmick = null;  /*! ギミック*/
     private Vector3 nearGimmickPos;                /*! 最も近いギミックの座標*/
-    private float leftTrigger;                                              /*! 左トリガー*/
+    private bool leftTrigger;                                              /*! 左トリガー*/
+    private float moveSpeed;                            /*! 移動速度*/
     private Rigidbody rigidBody;                         /*! リジッドボディ*/
     private Animator animator;                             /*! アニメーター*/
                                                            // private Vector3 rot;                                          /*! 向いている方向*/
     private GameObject cursor;                          /*! カーソル取得*/
+    private List<Vector3> posRootList;     /*! メインキャラクターの通ったルート座標*/
+    private const float betweenPosDist = 4f;  /*! ルート座標間の距離*/
 
     private enum State         /*! サブキャラクターの状態*/
     {
         eFollow,                          //ついていく
-        eFastMove,                    //メインキャラクターの元へ瞬時に移動
         eBeCarried,　                //運ばれる
         eBeThrown,　         　//投げられる
         eScissors,                       //鋏む
@@ -50,32 +56,38 @@ public class SubCharacterController : MonoBehaviour
     {
         cursor = GameObject.Find("cursor");
         camerawork = GameObject.Find("CameraWork").GetComponent<CameraWork>();
-        rigidBody = GetComponent<Rigidbody>();
-
-        state = State.eFollow;
-        animator = GetComponent<Animator>();
         mainCharaTrans = mainChara.transform;
         mainCharaController = mainChara.GetComponent<MainCharacterController>();
+        posRootList = new List<Vector3>();
+        posRootList.Add(mainCharaTrans.position);
+        rigidBody = GetComponent<Rigidbody>();
+        animator = GetComponent<Animator>();
+        state = State.eFollow;
     }
 
     /*! @brief   物理演算系更新*/
     private void FixedUpdate()
     {
+        InputController();
         Move();
+    }
+
+    /*! @brief 入力検知*/
+    void InputController()
+    {
+        leftTrigger = GamePad.GetTrigger(GamePad.Trigger.LeftTrigger, false);
     }
 
     /*! @brief   移動*/
     void Move()
     {
-        leftTrigger = GamePad.GetTrigger(GamePad.Trigger.LeftTrigger, false);
+        //ルート更新
+        AddRootList();
 
         switch (state)
         {
             case State.eFollow:
                 FollowMove();
-                break;
-            case State.eFastMove:
-                FastMove();
                 break;
             case State.eBeCarried:
                 CarryByMainPlayer();
@@ -89,21 +101,16 @@ public class SubCharacterController : MonoBehaviour
         }
     }
 
-    /*! @brief プレイヤーの元へ高速移動*/
-    void FastMove()
-    {
-        animator.SetBool("isDash", true);
-        transform.position = Vector3.Lerp(transform.position, mainCharaTrans.position, 0.5f);
-        if (Vector3.Distance(transform.position, mainCharaTrans.position) < 1f)
-        {
-            animator.SetBool("isDash", false);
-            state = State.eFollow;
-        }
-    }
-
     /*! @brief   サブキャラクターの移動*/
     void FollowMove()
     {
+        //ルートリストの先頭座標が一番古い座標
+        Vector3 oldPos = posRootList[0];
+        transform.position = Vector3.Lerp(transform.position, oldPos, 0.1f);
+
+        //ルートリストの更新
+        RemoveRootList();
+#if false
         Vector3 dir = mainCharaTrans.position - transform.position;
         float dist = dir.sqrMagnitude;
 
@@ -122,14 +129,43 @@ public class SubCharacterController : MonoBehaviour
         {
             animator.SetBool("isWalk", false);
         }
+#endif
 
         //回転
         FollowRotation();
+    }
 
-        if (GamePad.GetLeftStickAxis(false, GamePad.Stick.AxisY) > 0)
+    /*! @brief ルートリストに座標追加*/
+    void AddRootList()
+    {
+        //リストの最後が一番新しいルート座標
+        Vector3 lastPos = posRootList[posRootList.Count - 1];
+        float dist = Vector3.Distance(mainCharaTrans.position, lastPos);
+        if (dist >= betweenPosDist)
         {
-            state = State.eFastMove;
+            //リストに追加
+            Vector3 addPos = mainCharaTrans.position;
+            addPos.y += followOffsetY;
+            posRootList.Add(addPos);
         }
+    }
+
+    /*! @brief ルートリストの座標削除*/
+    void RemoveRootList()
+    {
+        //一番古いルートリスト座標に近づいたら削除
+        Vector3 oldPos = posRootList[0];
+        float dist = Vector3.Distance(transform.position, oldPos);
+        if (dist < 1.5f && posRootList.Count > 1)
+        {
+            posRootList.RemoveAt(0);
+        }
+    }
+
+    /*! @brief ジャンプ*/
+    void Jump()
+    {
+
     }
 
     /*! @brief 通常移動の向き*/
@@ -156,12 +192,12 @@ public class SubCharacterController : MonoBehaviour
         //位置
         Vector3 pos = (mainLeftHand.position + mainRightHand.position) / 2;
         transform.position = pos;
-        
+
         //回転
         Vector3 rot = transform.localEulerAngles;
         rot.y = mainCharaTrans.transform.eulerAngles.y;
         transform.localEulerAngles = rot;
-        
+
         rigidBody.useGravity = false;
         if (!mainCharaController.isSublayerCarry)
         {
@@ -182,7 +218,7 @@ public class SubCharacterController : MonoBehaviour
     /*! @brief ぶら下がりにおける移動*/
     void HungingMove()
     {
-        if (leftTrigger < 0.2 && nearGimmick != null)
+        if (nearGimmick != null)
         {
             nearGimmick = null;
             isScissor = false;
@@ -198,6 +234,8 @@ public class SubCharacterController : MonoBehaviour
         transform.LookAt(lookat);
     }
 
+    /*! @brief */
+
     /*! @brief 衝突した瞬間検知*/
     void ChildOnTriggerEnter(Collider col)
     {
@@ -208,14 +246,13 @@ public class SubCharacterController : MonoBehaviour
     void ChildOnTriggerStay(Collider col)
     {
         //触れているギミック取得
-        if (state != State.eHung && col.transform.tag == "Hook" && leftTrigger > 0.2)
+        if (col.transform.tag == "Hook")
         {
             nearGimmick = col.gameObject;
             nearGimmickPos = nearGimmick.transform.position;
             state = State.eHung;
-            isScissor = true;
         }
-        else if (state != State.eHung && col.transform.tag == "Goal" && leftTrigger > 0.2)
+        else if (state != State.eHung && col.transform.tag == "Goal")
         {
             nearGimmick = col.gameObject;
             nearGimmickPos = transform.position;

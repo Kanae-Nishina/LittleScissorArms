@@ -13,7 +13,7 @@ using InputGamePad;
 /*! @brief メインキャラクター管理クラス*/
 public class MainCharacterController : MonoBehaviour
 {
-    public float jumpPower = 0f;                      /*! ジャンプ力*/
+    [Range(6.0f,20.0f)]public float jumpPower = 0f;                      /*! ジャンプ力*/
     public int rollUpPower = 0;                         /*! 巻き上げる力*/
     public float lookAngle = 0f;                         /*! キャラクターの向く角度*/
     private float moveSpeed = 0f;                    /*! 移動量*/
@@ -46,8 +46,7 @@ public class MainCharacterController : MonoBehaviour
     private GameObject nearGimmick = null;           /*! ギミック*/
     private bool isAbleJump = true;                             /*! ジャンプ可能フラグ*/
     private Vector2 Stick;                                                /*! 左スティックの入力値*/
-    private float Ltrg;                                                       /*! 左トリガーの入力値*/
-    private float Rtrg;                                                      /*! 右トリガーの入力値*/
+    private bool rightTrigger;                                                      /*! 右トリガーの入力値*/
     private Rigidbody rigidBody;                                 /*! 自身のリジッドボディ*/
     private GameObject cursor;                                   /*! カーソルオブジェクト*/
     private CameraWork cameraWork;                     /*! カメラワーク管理クラス*/
@@ -90,6 +89,7 @@ public class MainCharacterController : MonoBehaviour
         subPlayerRig = subPlayer.GetComponent<Rigidbody>();
         state = State.eNormal;
         animator = GetComponent<Animator>();
+        jumpPower *= 100f;
     }
 
     /*! @brief   物理演算系更新*/
@@ -173,7 +173,7 @@ public class MainCharacterController : MonoBehaviour
     /*! @brief アイテム所持*/
     void BringItem()
     {
-        if(isItemCarry && nearGimmick!=null)
+        if (isItemCarry && nearGimmick != null)
         {
             Vector3 itemPos = (leftHand.position + rightHand.position) / 2;
             nearGimmick.transform.position = itemPos;
@@ -331,27 +331,27 @@ public class MainCharacterController : MonoBehaviour
     /*! @brief 振り子のモーション初期設定*/
     void SetPendulumAnimation()
     {
-        if(playerPath.currentPos>prePathPos)
+        if (playerPath.currentPos > prePathPos)
         {
             isHangFront = (swingAngle < 90f) ? true : false;
         }
         else
         {
-            isHangFront = (swingAngle < 90f) ? false: true;
+            isHangFront = (swingAngle < 90f) ? false : true;
         }
         animator.SetBool("isHangFront", isHangFront);
         animator.SetBool("isHangBack", !isHangFront);
     }
-    
+
     /*! @brief 振り子状態の時のアニメーション遷移*/
     void TransitionAnimationByPendulum()
     {
         if (isItemCarry) return;
-        if(isHangFront && preAngleDeg<newAngleDeg)
+        if (isHangFront && preAngleDeg < newAngleDeg)
         {
             isHangFront = !isHangFront;
         }
-        else if(!isHangFront&&preAngleDeg>newAngleDeg)
+        else if (!isHangFront && preAngleDeg > newAngleDeg)
         {
             isHangFront = !isHangFront;
         }
@@ -395,7 +395,7 @@ public class MainCharacterController : MonoBehaviour
         }
 
         // ギミックを離す
-        if (Rtrg < 0.5 && nearGimmick != null)
+        if (rightTrigger && nearGimmick != null)
         {
             if (isSublayerCarry)
             {
@@ -411,7 +411,7 @@ public class MainCharacterController : MonoBehaviour
             }
 
             isCarry = false;
-            
+
             nearGimmick = null;
         }
 
@@ -441,17 +441,13 @@ public class MainCharacterController : MonoBehaviour
     void InputController()
     {
         Stick = GamePad.GetLeftStickAxis(false);
-        Ltrg = GamePad.GetTrigger(GamePad.Trigger.LeftTrigger, false);
-        Rtrg = GamePad.GetTrigger(GamePad.Trigger.RightTrigger, false);
+        rightTrigger = GamePad.GetTrigger(GamePad.Trigger.RightTrigger, false);
     }
 
     /*! @brief トリガーの入力取得*/
-    public float GetTrigger(GamePad.Trigger trigger)
+    public bool GetRightTrigger()
     {
-        if (trigger == GamePad.Trigger.LeftTrigger)
-            return Ltrg;
-        else
-            return Rtrg;
+        return rightTrigger;
     }
 
     /*! @brief   移動アニメーション*/
@@ -542,14 +538,14 @@ public class MainCharacterController : MonoBehaviour
             col.GetComponent<Gimmick>().isGimmick = true;
         }
     }
-    
+
     /*! @brief   衝突を継続検知*/
     void ChildOnTriggerStay(Collider col)
     {
         mainScissor = col;
 
         //触れているサブキャラ取得
-        if (Rtrg > 0.8 && !isCarry && (mainScissor.tag == "SubPlayer" || mainScissor.tag == "Item"))
+        if (rightTrigger && !isCarry && (mainScissor.tag == "SubPlayer" || mainScissor.tag == "Item"))
         {
             nearGimmick = mainScissor.gameObject;
             isCarry = true;

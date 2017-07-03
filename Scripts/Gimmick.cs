@@ -160,14 +160,14 @@ public class Gimmick : MonoBehaviour
         Vector3 own = new Vector3(0f, transform.position.y, 0f);
         Vector3 ply = new Vector3(0f, player.transform.position.y, 0f);
         float dist = Vector3.Distance(own, ply);
-        float trigger = player.GetTrigger(InputGamePad.GamePad.Trigger.RightTrigger);
-        if (dist < 1.0f && (trigger) > 0.8f)
+        bool trigger = player.GetRightTrigger();
+        if (dist < 1.0f && trigger)
         {
             transform.position += player.playerPath.GetAddPotision();
             player.transform.LookAt(transform.position);
             player.GetComponent<Animator>().SetBool("isScissors", true);
         }
-        if(trigger<=0.8f)
+        else if(!trigger)
             player.GetComponent<Animator>().SetBool("isScissors", false);
     }
 
@@ -216,5 +216,14 @@ public class Gimmick : MonoBehaviour
             SetBattery();
         }
     }
-    
+
+    /*! @brief 衝突離れ検知*/
+    private void OnTriggerExit(Collider other)
+    {
+        //引きだしギミック解除
+        if(type[gimmickNum]==GimmickType.drawerMove&&other.transform.tag=="Player")
+        {
+            isGimmick = false;
+        }
+    }
 }
