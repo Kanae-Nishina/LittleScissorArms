@@ -84,7 +84,7 @@ public class CameraWork : MonoBehaviour
             return;
 
         Vector3 zoom = Vector3.zero;
-        if (player.isSublayerCarry)
+        if (player.isSubPlayerCarry)
         {
             zoom = CameraZoomOut(playerPath.target.position);
         }

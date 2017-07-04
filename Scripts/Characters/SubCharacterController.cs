@@ -15,9 +15,10 @@ public class SubCharacterController : MonoBehaviour
     public float jumpPower=500f;                /*! ジャンプ力*/
     public float beThrownPower;                       /*! 投げられる力*/
     public float moveStopDist = 1f;             /*! サブキャラが止まる距離*/
-    public float normalMoveSpeed = 1f;                /*! 通常移動速度*/
-    public float dashSpeed = 1f;                /*! ダッシュ移動速度*/
-    public float followOffsetY;                 /*! 追従処理の*/
+    [Range(0f,10f)]public float normalMoveSpeed = 1f;                /*! 通常移動速度*/
+    [Range(0f, 10f)] public float dashSpeed = 2f;                /*! ダッシュ移動速度*/
+    public float followOffsetY;                 /*! 追従座標のY軸オフセット*/
+    public int dashPosListCount=5;            /*! ダッシュしだす座標リストの数*/
     public GameObject mainChara;            /*! メインキャラクター*/
     [System.NonSerialized]
     public static bool isScissor;           /*! 鋏み*/
@@ -34,11 +35,13 @@ public class SubCharacterController : MonoBehaviour
     private bool leftTrigger;                                              /*! 左トリガー*/
     private float moveSpeed;                            /*! 移動速度*/
     private Rigidbody rigidBody;                         /*! リジッドボディ*/
+    [SerializeField]
     private Animator animator;                             /*! アニメーター*/
                                                            // private Vector3 rot;                                          /*! 向いている方向*/
     private GameObject cursor;                          /*! カーソル取得*/
     private List<Vector3> posRootList;     /*! メインキャラクターの通ったルート座標*/
-    private const float betweenPosDist = 4f;  /*! ルート座標間の距離*/
+    private const float betweenPosDist = 3f;  /*! ルート座標間の距離*/
+    private LayerMask groundLayer;                 /*! 地面のレイヤー*/
 
     private enum State         /*! サブキャラクターの状態*/
     {
@@ -56,12 +59,13 @@ public class SubCharacterController : MonoBehaviour
     {
         cursor = GameObject.Find("cursor");
         camerawork = GameObject.Find("CameraWork").GetComponent<CameraWork>();
+        groundLayer = LayerMask.GetMask("Ground");
         mainCharaTrans = mainChara.transform;
         mainCharaController = mainChara.GetComponent<MainCharacterController>();
         posRootList = new List<Vector3>();
         posRootList.Add(mainCharaTrans.position);
         rigidBody = GetComponent<Rigidbody>();
-        animator = GetComponent<Animator>();
+        //animator = GetComponent<Animator>();
         state = State.eFollow;
     }
 
@@ -81,9 +85,6 @@ public class SubCharacterController : MonoBehaviour
     /*! @brief   移動*/
     void Move()
     {
-        //ルート更新
-        AddRootList();
-
         switch (state)
         {
             case State.eFollow:
@@ -104,9 +105,25 @@ public class SubCharacterController : MonoBehaviour
     /*! @brief   サブキャラクターの移動*/
     void FollowMove()
     {
+        //ジャンプ
+        Jump();
+        //ルート更新
+        AddRootList();
         //ルートリストの先頭座標が一番古い座標
         Vector3 oldPos = posRootList[0];
-        transform.position = Vector3.Lerp(transform.position, oldPos, 0.1f);
+        float dist = Vector3.Distance(transform.position, mainCharaTrans.position);
+        if(posRootList.Count< dashPosListCount)
+        {
+            moveSpeed = normalMoveSpeed;
+        }
+        else
+        {
+            moveSpeed = dashSpeed;
+        }
+        if (dist >= moveStopDist)
+        {
+            transform.position = Vector3.Lerp(transform.position, oldPos, 0.1f*moveSpeed);
+        }
 
         //ルートリストの更新
         RemoveRootList();
@@ -139,8 +156,16 @@ public class SubCharacterController : MonoBehaviour
     void AddRootList()
     {
         //リストの最後が一番新しいルート座標
+        if(posRootList.Count==0)
+        {
+            //リストに追加
+            posRootList.Add(mainCharaTrans.position);
+        }
+
         Vector3 lastPos = posRootList[posRootList.Count - 1];
-        float dist = Vector3.Distance(mainCharaTrans.position, lastPos);
+        Vector3 pos = mainCharaTrans.position;
+        pos.y += followOffsetY;
+        float dist = Vector3.Distance(pos, lastPos);
         if (dist >= betweenPosDist)
         {
             //リストに追加
@@ -165,7 +190,14 @@ public class SubCharacterController : MonoBehaviour
     /*! @brief ジャンプ*/
     void Jump()
     {
-
+        Vector3 dir = (mainCharaTrans.position - transform.position).normalized;
+        dir += transform.position;
+        dir.y = transform.position.y;
+        Debug.DrawLine(transform.position, dir,Color.blue);
+        if(Physics.Linecast(transform.position,dir,groundLayer))
+        {
+            rigidBody.AddForce(Vector3.up * jumpPower);
+        }
     }
 
     /*! @brief 通常移動の向き*/
@@ -189,6 +221,9 @@ public class SubCharacterController : MonoBehaviour
     {
         rigidBody.velocity = Vector3.zero;
 
+        //ルートリストリセット
+        posRootList.Clear();
+
         //位置
         Vector3 pos = (mainLeftHand.position + mainRightHand.position) / 2;
         transform.position = pos;
@@ -199,7 +234,7 @@ public class SubCharacterController : MonoBehaviour
         transform.localEulerAngles = rot;
 
         rigidBody.useGravity = false;
-        if (!mainCharaController.isSublayerCarry)
+        if (!mainCharaController.isSubPlayerCarry)
         {
             state = State.eBeThrown;
         }
@@ -211,7 +246,6 @@ public class SubCharacterController : MonoBehaviour
         rigidBody.useGravity = true;
         Vector3 throwAngle = cursor.GetComponent<CursorMove>().throwPos - transform.position;
         rigidBody.AddForce(throwAngle * beThrownPower);
-        state = State.eFollow;
         animator.SetBool("isScissorUp", false);
     }
 
@@ -233,8 +267,6 @@ public class SubCharacterController : MonoBehaviour
         Vector3 lookat = transform.position + camerawork.GetCameraVec();
         transform.LookAt(lookat);
     }
-
-    /*! @brief */
 
     /*! @brief 衝突した瞬間検知*/
     void ChildOnTriggerEnter(Collider col)

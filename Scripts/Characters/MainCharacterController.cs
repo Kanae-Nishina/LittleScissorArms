@@ -13,7 +13,7 @@ using InputGamePad;
 /*! @brief メインキャラクター管理クラス*/
 public class MainCharacterController : MonoBehaviour
 {
-    [Range(6.0f,20.0f)]public float jumpPower = 0f;                      /*! ジャンプ力*/
+    [Range(6.0f, 20.0f)] public float jumpPower = 0f;                      /*! ジャンプ力*/
     public int rollUpPower = 0;                         /*! 巻き上げる力*/
     public float lookAngle = 0f;                         /*! キャラクターの向く角度*/
     private float moveSpeed = 0f;                    /*! 移動量*/
@@ -25,7 +25,7 @@ public class MainCharacterController : MonoBehaviour
     public PlayerPath playerPath;                     /*! プレイヤーの移動軌跡*/
     public static bool isLookFront = true;       /*! 前を見ているか*/
     public static Collider mainScissor;              /*! 挟み判定をするコライダー*/
-    public bool isSublayerCarry = false;           /*! サブキャラ運んでいるか*/
+    public bool isSubPlayerCarry = false;           /*! サブキャラ運んでいるか*/
     public Transform leftHand;                          /*! 左手*/
     public Transform rightHand;                       /*! 右手*/
     public enum State                                          /*! 行動状態*/
@@ -88,7 +88,7 @@ public class MainCharacterController : MonoBehaviour
         cameraWork = GameObject.Find("CameraWork").GetComponent<CameraWork>();
         subPlayerRig = subPlayer.GetComponent<Rigidbody>();
         state = State.eNormal;
-        animator = GetComponent<Animator>();
+        //animator = GetComponent<Animator>();
         jumpPower *= 100f;
     }
 
@@ -374,14 +374,14 @@ public class MainCharacterController : MonoBehaviour
         }
 
         //カーソルの出現フラグ
-        cursor.SetActive(isSublayerCarry);
+        cursor.SetActive(isSubPlayerCarry);
 
         //キャラクターの中央から足元にかけて、接地判定用のラインを引く
         Vector3 newPos = transform.position - (transform.up * 3.5f);
 
         isAbleJump = Physics.Linecast(transform.position, newPos, groundLayer); // Linecastが判定するレイヤー 
 
-        if (isSublayerCarry)
+        if (isSubPlayerCarry)
         {
             // サブキャラを持ち上げる
             animator.SetBool("isScissorsUp", true);
@@ -397,9 +397,9 @@ public class MainCharacterController : MonoBehaviour
         // ギミックを離す
         if (rightTrigger && nearGimmick != null)
         {
-            if (isSublayerCarry)
+            if (isSubPlayerCarry)
             {
-                isSublayerCarry = false;
+                isSubPlayerCarry = false;
                 cursor.GetComponent<CursorMove>().throwPos = cursor.transform.position;
                 animator.SetBool("isScissorsUp", false);
                 animator.SetBool("isLeave", true);
@@ -422,6 +422,23 @@ public class MainCharacterController : MonoBehaviour
             {
                 state = State.eAction;
             }
+        }
+    }
+
+    /*! @brief サブキャラクターを持ち運ぶ*/
+    void BringSubCharactor()
+    {
+        if (rightTrigger && mainScissor.tag == "SubPlayer")
+        {
+            isSubPlayerCarry = true;
+            animator.SetBool("isScissorsUp", true);
+        }
+        else if (!rightTrigger && isSubPlayerCarry)
+        {
+            isSubPlayerCarry = false;
+            cursor.GetComponent<CursorMove>().throwPos = cursor.transform.position;
+            animator.SetBool("isScissorsUp", false);
+            animator.SetBool("isLeave", true);
         }
     }
 
@@ -509,7 +526,7 @@ public class MainCharacterController : MonoBehaviour
             dir = preLookAt;
         }
         preLookAt = dir;
-        if (!isSublayerCarry)
+        if (!isSubPlayerCarry)
         {
             dir *= lookDist;
             dir += cameraWork.GetCameraVec();
@@ -518,11 +535,11 @@ public class MainCharacterController : MonoBehaviour
         transform.LookAt(lookat);
     }
 
-    /*! @brief サブプレイヤーのステートを運ぶに変更*/
-    public void ChangeSubStateToCarry()
-    {
-        subPlayer.GetComponent<SubCharacterController>().SetStateBeCarried();
-    }
+    ///*! @brief サブプレイヤーのステートを運ぶに変更*/
+    //public void ChangeSubStateToCarry()
+    //{
+    //    subPlayer.GetComponent<SubCharacterController>().SetStateBeCarried();
+    //}
 
     /*! @brief 行動状況の取得*/
     public State GetState()
@@ -543,28 +560,12 @@ public class MainCharacterController : MonoBehaviour
     void ChildOnTriggerStay(Collider col)
     {
         mainScissor = col;
-
-        //触れているサブキャラ取得
-        if (rightTrigger && !isCarry && (mainScissor.tag == "SubPlayer" || mainScissor.tag == "Item"))
-        {
-            nearGimmick = mainScissor.gameObject;
-            isCarry = true;
-
-            if (mainScissor.tag == "SubPlayer")
-            {
-                isSublayerCarry = true;
-            }
-            else if (mainScissor.tag == "Item")
-            {
-                isItemCarry = true;
-            }
-        }
     }
 
     /*! @brief   衝突から離れたかどうかの検知*/
     void ChildOnTriggerExit(Collider col)
     {
-        mainScissor = col;
+        mainScissor = null;
     }
 }
 
