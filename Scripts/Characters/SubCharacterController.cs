@@ -40,7 +40,7 @@ public class SubCharacterController : MonoBehaviour
                                                            // private Vector3 rot;                                          /*! 向いている方向*/
     private GameObject cursor;                          /*! カーソル取得*/
     private List<Vector3> posRootList;     /*! メインキャラクターの通ったルート座標*/
-    private const float betweenPosDist = 3f;  /*! ルート座標間の距離*/
+    private const float betweenPosDist = 5f;  /*! ルート座標間の距離*/
     private LayerMask groundLayer;                 /*! 地面のレイヤー*/
 
     private enum State         /*! サブキャラクターの状態*/
@@ -120,7 +120,7 @@ public class SubCharacterController : MonoBehaviour
         {
             moveSpeed = dashSpeed;
         }
-        if (dist >= moveStopDist)
+        //if (dist >= moveStopDist)
         {
             transform.position = Vector3.Lerp(transform.position, oldPos, 0.1f*moveSpeed);
         }
@@ -155,16 +155,18 @@ public class SubCharacterController : MonoBehaviour
     /*! @brief ルートリストに座標追加*/
     void AddRootList()
     {
-        //リストの最後が一番新しいルート座標
-        if(posRootList.Count==0)
-        {
-            //リストに追加
-            posRootList.Add(mainCharaTrans.position);
-        }
-
-        Vector3 lastPos = posRootList[posRootList.Count - 1];
         Vector3 pos = mainCharaTrans.position;
         pos.y += followOffsetY;
+        //リストが空だったらメインキャラの現在地点を追加
+        if (posRootList.Count==0)
+        {
+            //リストに追加
+            posRootList.Add(pos);
+            return;
+        }
+
+        //リストの最後が一番新しいルート座標
+        Vector3 lastPos = posRootList[posRootList.Count - 1];
         float dist = Vector3.Distance(pos, lastPos);
         if (dist >= betweenPosDist)
         {
@@ -193,7 +195,7 @@ public class SubCharacterController : MonoBehaviour
         Vector3 dir = (mainCharaTrans.position - transform.position).normalized;
         dir += transform.position;
         dir.y = transform.position.y;
-        Debug.DrawLine(transform.position, dir,Color.blue);
+        //Debug.DrawLine(transform.position, dir,Color.blue);
         if(Physics.Linecast(transform.position,dir,groundLayer))
         {
             rigidBody.AddForce(Vector3.up * jumpPower);
@@ -247,6 +249,7 @@ public class SubCharacterController : MonoBehaviour
         Vector3 throwAngle = cursor.GetComponent<CursorMove>().throwPos - transform.position;
         rigidBody.AddForce(throwAngle * beThrownPower);
         animator.SetBool("isScissorUp", false);
+        state = State.eFollow;
     }
 
     /*! @brief ぶら下がりにおける移動*/
@@ -259,8 +262,8 @@ public class SubCharacterController : MonoBehaviour
             state = State.eFollow;
             return;
         }
-
-        rigidBody.velocity = Vector3.zero;
+        rigidBody.useGravity = false;
+        //rigidBody.velocity = Vector3.zero;
         Vector3 pos = nearGimmickPos;
         pos.y -= (transform.localScale.y + nearGimmick.transform.localScale.y);
         transform.position = pos;

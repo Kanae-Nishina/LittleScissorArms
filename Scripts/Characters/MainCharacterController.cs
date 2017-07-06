@@ -381,6 +381,8 @@ public class MainCharacterController : MonoBehaviour
 
         isAbleJump = Physics.Linecast(transform.position, newPos, groundLayer); // Linecastが判定するレイヤー 
 
+        BringSubCharactor();
+
         if (isSubPlayerCarry)
         {
             // サブキャラを持ち上げる
